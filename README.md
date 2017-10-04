@@ -25,14 +25,14 @@ In previous years I've learned that sometimes a seemingly more complicated libra
 attempting to make it standards-compliant.
 That is why I'm developing a new version of JDroidLib whenever I have some free time. (Which isn't that often, to be perfectly honest).
 
-This version as it is, has been under active development for about a week or two, and as you can tell by the (lack of) code, 
+This version, as it is, has been under active development for several weeks, and as you can tell by the (lack of) code, 
 I don't have much time for development, but it'll get there eventually!
 
 ## Ok, great! Now why should I care?
 
 If Java isn't your language, or you simply don't want/need your apps to communicate with Android devices, then you absolutely don't
 have to!
-If, however, you're in that niche market, you should give it a looksy to make your application smaller, faster and your development time
+If, however, you're in that niche market, you should give it a looksee to make your application smaller, faster and your development time
 a lot shorter!
 
 ## Design choices?
