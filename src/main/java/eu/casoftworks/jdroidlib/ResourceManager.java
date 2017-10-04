@@ -78,7 +78,7 @@ class ResourceManager implements IResourceManager {
         switch (osType) {
             default:
             case Other:
-                throw new PlatformNotSupportedException("The platform \"" + System.getProperty("os.name") + " is not supported by JDroidLib!");
+                throw new PlatformNotSupportedException(String.format("The platform \"%s\" is not supported by JDroidLib!", System.getProperty("os.name")));
             case Linux:
                 task = new FutureTask<File>(() -> {
                     File outputFile = null;
