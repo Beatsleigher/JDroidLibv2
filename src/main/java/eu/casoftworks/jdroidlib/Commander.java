@@ -10,6 +10,7 @@ import eu.casoftworks.jdroidlib.enums.DeviceState;
 import eu.casoftworks.jdroidlib.exception.IllegalDeviceStateException;
 import eu.casoftworks.jdroidlib.interfaces.*;
 
+import javax.annotation.Resource;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -18,7 +19,7 @@ import java.util.concurrent.*;
  * <b >This is NOT a public class!</b>
  * @author Simon Cahill
  */
-class Commander {
+class Commander implements IExecutioner {
     
     private final IResourceManager resMan;
     
@@ -32,103 +33,73 @@ class Commander {
      * This method does not return command output!
      * @param command The command to execute.
      */
-    void executeCommandNoOutput(ICommand command) {
-        switch (command.getCommandType()) {
-            case AdbCommand:
-            case AdbShellCommand:
-                executeAdbCommandNoOutput(command);
-                return;
-            case FastbootCommand:
-                executeFastbootCommandNoOutput(command);
-                return;
-            default:
-                throw new UnsupportedOperationException("These command types are not yet supported!");
+    public void executeCommandNoOutput(ICommand command) throws IOException, IllegalDeviceStateException {
+        executeCommandReturnProcess(command);
+    }
+
+    @Override
+    public String executeCommandReturnOutput(ICommand command) throws IOException, IllegalDeviceStateException {
+        return null;
+    }
+
+    @Override
+    public int executeCommandReturnExitCode(ICommand command) throws IOException, IllegalDeviceStateException {
+        return 0;
+    }
+
+    @Override
+    public ITuple2<Integer, String> executeCommand(ICommand command) throws IOException, IllegalDeviceStateException {
+        return null;
+    }
+
+    @Override
+    public Process executeCommandReturnProcess(ICommand command) throws IOException, IllegalDeviceStateException {
+
+        /**
+         * Synchronize (lock) on to the LOCK object
+         * to prevent multiple command being executed simultaneously.
+         * This is to prevent threads accessing the same resources.
+         *
+         * Should result in a more stable library.
+         * I can't stress the SHOULD enough!
+         */
+        synchronized (LOCK) {
+            List<String> args = getProcArgs(command);
+
+            return new ProcessBuilder()
+                    .command(args)
+                    .directory(new File(((ResourceManager)resMan).getJDroidLibTmpDirectory()))
+                    .inheritIO()
+                    .redirectErrorStream(true)
+                    .start();
         }
     }
-    
-    /**
-     * Takes an instance of ICommand, determines what type of command it is and
-     * passes it to the correct method.
-     * Command execution is asynchronous
-     * This method does not return command output!
-     * @param command The command to execute.
-     * @return The execution task
-     */
-    Future executeCommandAsyncNoOutput(ICommand command) {
-        return new FutureTask(() -> {
-            switch (command.getCommandType()) {
-                case AdbCommand:
-                case AdbShellCommand:
-                    executeAdbCommandNoOutput(command);
-                case FastbootCommand:
-                    executeFastbootCommandNoOutput(command);
-                default:
-                    throw new UnsupportedOperationException("These command types are not yet supported!");
-            }
-        });
+
+    @Override
+    public Future executeCommandNoOutputAsync(ICommand command) throws IOException, IllegalDeviceStateException {
+        return null;
     }
-    
-    /**
-     * Takes an instance of ICommand, determines what type of command it is and
-     * passes it on to the correct method.
-     * This method returns command output!
-     * @param command The command to execute.
-     * @return The command output.
-     */
-    String executeCommand(ICommand command) {
-        switch (command.getCommandType()) {
-            case AdbCommand:
-            case AdbShellCommand:
-                return executeAdbCommand(command);
-            case FastbootCommand:
-                return executeFastbootCommand(command);
-            default:
-                throw new UnsupportedOperationException("These command types are not yet supported!");
-        }
+
+    @Override
+    public Future<String> executeCommandReturnOutputAsync(ICommand command) throws IOException, IllegalDeviceStateException {
+        return null;
     }
-    
-    /**
-     * Takes an instance of ICommand, determines what type of command it is and
-     * passes it on to the correct method.
-     * Command execution is asynchronous!
-     * This method returns command output!
-     * @param command The command to execute!
-     * @return The execution task containing the command's output.
-     */
-    FutureTask<String> executeCommandAsync(ICommand command) {
-        return new FutureTask<String>(() -> {
-            switch (command.getCommandType()) {
-                case AdbCommand:
-                case AdbShellCommand:
-                    return executeAdbCommandNoOutput(command);
-                case FastbootCommand:
-                    return executeFastbootCommandNoOutput(command);
-                default:
-                    throw new UnsupportedOperationException("These command types are not yet supported!");
-            }
-        });
+
+    @Override
+    public Future<Integer> executeCommandReturnExitCodeAsync(ICommand command) throws IOException, IllegalDeviceStateException {
+        return null;
     }
-    
-    void executeAdbCommandNoOutput(ICommand protoCommand) {
-        AdbCommand command = (AdbCommand)protoCommand;
-        List<String> args = new ArrayList<>();
-        
-        
-        
+
+    @Override
+    public Future<ITuple2<Integer, String>> executeCommandAsync(ICommand command) throws IOException, IllegalDeviceStateException {
+        return null;
     }
-    
-    String executeAdbCommand(ICommand command) {
-        throw new UnsupportedOperationException("This method is not yet implemented.");
+
+    @Override
+    public Future<Process> executeCommandReturnProcessAsync(ICommand command) throws IOException, IllegalDeviceStateException {
+        return null;
     }
-    
-    void executeFastbootCommandNoOutput(ICommand command) {
-        throw new UnsupportedOperationException("This method is not yet implemented.");
-    }
-    
-    String executeFastbootCommand(ICommand command) {
-        throw new UnsupportedOperationException("This method is not yet implemented.");
-    }
-    
+
     /**
      * Prepares all the arguments as required to execute the process.
      * @param command The command to execute.
@@ -211,5 +182,38 @@ class Commander {
         
         return args;
     }
-    
+
+    /**
+     * It's kind of obvious, if you ask me, but I get the output from
+     * any process object that's not dead, essentially.
+     * @param proc The process to retrieve output from.
+     * @return The process's output.
+     * @throws IOException If an I/O error occurs.
+     */
+    private String getProcessOutput(Process proc) throws IOException {
+        StringBuilder sBuilder = new StringBuilder();
+
+        if (proc == null)
+            throw new IllegalArgumentException("Process must not be null!");
+        if (!proc.isAlive())
+            return sBuilder.toString(); // It might have died already without output.
+
+        // Use try-with-resources to automatically close the reader once it's no longer
+        // required. Less work for me!
+        try (BufferedReader biStreamReader = new BufferedReader(new InputStreamReader(proc.getInputStream()))) {
+            String line = null;
+
+            /*
+             * Continue loop while the process is still alive
+             * and the output is not null.
+             * If process dies, attempting to read from the stream will only cause exceptions
+             * and confuse users and developers alike.
+             */
+            while (proc.isAlive() && (line = biStreamReader.readLine()) != null) {
+                sBuilder.append(line).append('\n');
+            }
+        }
+        return sBuilder.toString();
+    }
+
 }
