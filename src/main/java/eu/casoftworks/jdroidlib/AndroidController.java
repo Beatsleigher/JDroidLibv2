@@ -80,11 +80,10 @@ public class AndroidController implements IExecutioner {
     }
 
     /**
-     * Attempts to connect the first found device from the list of devices.
-     * @return The first (connected) device found.
+     * Attempts to retrieve the first device found on the host machine.
+     * @return The first (connected) device found or {@code null} if an error occurred/no devices were found.
      */
     public Device getDevice() {
-
         try {
             refreshDevices();
         } catch (Exception e) {
@@ -97,7 +96,94 @@ public class AndroidController implements IExecutioner {
         return deviceList.get(0);
     }
 
-    private void refreshDevices() throws IllegalDeviceStateException, InterruptedException, IOException, ExecutionException {
+    /**
+     * Attempts to return a device with the serial no provided by the serial param.
+     * @param serial The serial no of the device.
+     * @return The {@link Device} with the serial no provided by the serial param, or {@null}
+     * if an error occurred/the device wasn't found.
+     *
+     * @see Device
+     */
+    public Device getDevice(String serial) {
+        try {
+            refreshDevices();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (deviceList.isEmpty())
+            return null;
+
+        for (Device device : deviceList) {
+            if (!device.isConnectedViaTcpIp() && device.getSerialNumber().equalsIgnoreCase(serial))
+                return device;
+        }
+
+        return null;
+    }
+
+    /**
+     * Attempts to return a device with the IP address provided by the ipAddr param.
+     * @param ipAddr The IP address of the device.
+     * @return The {@link Device} with the IP address provided by the ipAddr param, or {@null}
+     * if an error occurred/the device wasn't found.
+     *
+     * @see Device
+     */
+    public Device getDevice(Ip4Address ipAddr) {
+        try {
+            refreshDevices();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (deviceList.isEmpty())
+            return null;
+
+        for (Device device : deviceList) {
+            if (device.isConnectedViaTcpIp() && device.getIpAddress() == ipAddr)
+                return device;
+        }
+
+        return null;
+    }
+
+    /**
+     * Attempts to connect to a {@Device} via TCP/IP
+     * @param ipAddr The IP address to connect to.
+     * @return {@code true} if the device was successfully connected, {@code false} otherwise.
+     * @throws IllegalDeviceStateException
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    public boolean connectToDevice(Ip4Address ipAddr) throws IllegalDeviceStateException, InterruptedException, IOException {
+        String output = executeCommandReturnOutput(AdbCommand.getConnectDeviceCommand(ipAddr));
+        return output.startsWith("connected to");
+    }
+
+    /**
+     * Attempts to disconnect from a specific {@link Device} connected via TCP/IP.
+     * @param device The {@link Device} to disconnect from.
+     * @throws DeviceNotConnectedViaTcpIpException
+     * @throws IllegalDeviceStateException
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    public void disconnectFromDevice(Device device) throws DeviceNotConnectedViaTcpIpException, IllegalDeviceStateException, InterruptedException, IOException {
+        executeCommandNoOutput(AdbCommand.getDisconnectDeviceCommand(device));
+    }
+
+    /**
+     * Attempts to disconnect <b>all</b> devices connected to the host via TCP/IP.
+     * @throws IllegalDeviceStateException
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    public void disconnectFromAllDevices() throws IllegalDeviceStateException, InterruptedException, IOException {
+        executeCommandNoOutput(AdbCommand.getDisconnectAllDevicesCommand());
+    }
+
+    public void refreshDevices() throws IllegalDeviceStateException, InterruptedException, IOException, ExecutionException {
         deviceList.clear();
         try (BufferedReader reader = new BufferedReader(new StringReader(commander.executeCommandReturnOutputAsync(AdbCommand.getDevicesLongCommand()).get()))) {
             String line;
@@ -110,7 +196,9 @@ public class AndroidController implements IExecutioner {
 
                 // Determine if USB or TCP/IP device
                 if (Ip4Address.isIp4Address(parsedLine.getItem1())) {
-                    Device.getDevice(Ip4Address.fromAddress(parsedLine.getItem1()), parsedLine.getItem3(), parsedLine.getItem4(), DeviceState.valueOf(parsedLine.getItem2()));
+                    deviceList.add(Device.getDevice(Ip4Address.fromAddress(parsedLine.getItem1()), parsedLine.getItem3(), parsedLine.getItem4(), DeviceState.valueOf(parsedLine.getItem2())));
+                } else {
+                    deviceList.add(Device.getDevice(parsedLine.getItem1(), parsedLine.getItem3(), parsedLine.getItem4(), DeviceState.valueOf(parsedLine.getItem2())));
                 }
             }
         }

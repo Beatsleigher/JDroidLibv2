@@ -27,7 +27,9 @@ package eu.casoftworks.jdroidlib.commands;
 
 import eu.casoftworks.jdroidlib.device.Device;
 import eu.casoftworks.jdroidlib.enums.CommandType;
+import eu.casoftworks.jdroidlib.exception.*;
 import eu.casoftworks.jdroidlib.interfaces.ICommand;
+import eu.casoftworks.jdroidlib.util.*;
 
 /**
  * Represents an ADB (Android Debug Bridge) command to be executed
@@ -96,6 +98,36 @@ public class AdbCommand extends Command {
      */
     public static AdbCommand getDevicesLongCommand() {
         return new Factory().setCommandTag("devices").setCommandArgs("-l").create();
+    }
+
+    /**
+     * Gets a command for connecting to a specific device via TCP/IP.
+     * @param ip4Address The IP address to connect to.
+     * @return An instance of {@link ICommand}
+     */
+    public static AdbCommand getConnectDeviceCommand(Ip4Address ip4Address) {
+        return new Factory().setCommandTag("connect").setCommandArgs(ip4Address.toString()).create();
+    }
+
+    /**
+     * Gets a command for disconnecting from a specific device connected via TCP/IP.
+     * @param device The device to disconnect from.
+     * @return An instance of {@link ICommand}
+     * @throws DeviceNotConnectedViaTcpIpException If the device in question is not connected to the
+     * host via TCP/IP
+     */
+    public static AdbCommand getDisconnectDeviceCommand(Device device) throws DeviceNotConnectedViaTcpIpException {
+        if (!device.isConnectedViaTcpIp())
+            throw new DeviceNotConnectedViaTcpIpException(String.format("The device %s is not connected via TCP/IP!", device.getSerialNumber()));
+        return new Factory().setCommandTag("disconnect").setCommandArgs(device.getIpAddress().toString()).create();
+    }
+
+    /**
+     * Gets a command for disconnecting from all devices connected to the host via TCP/IP.
+     * @return An instance of {@link ICommand}
+     */
+    public static AdbCommand getDisconnectAllDevicesCommand() {
+        return new Factory().setCommandTag("disconnect").create();
     }
 
 }

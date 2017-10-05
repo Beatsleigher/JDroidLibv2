@@ -9,17 +9,13 @@ import java.util.concurrent.*;
 public class TestMain {
 
     public static void main(String[] args) {
+        AndroidController adbController;
         try {
-            AndroidController adbController = AndroidController.getController();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (PlatformNotSupportedException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+            adbController = AndroidController.getController();
+        } catch (InterruptedException | ExecutionException | PlatformNotSupportedException | IOException e) {
             e.printStackTrace();
         }
+
     }
 
 }

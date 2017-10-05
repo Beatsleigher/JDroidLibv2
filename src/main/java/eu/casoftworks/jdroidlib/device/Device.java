@@ -61,7 +61,11 @@ public class Device {
         Device device = getDevice(serialNo);
         if (device == null)
             return new Device(serialNo, productString, modelString, state);
-        else return device;
+
+        if (device.state != state)
+            device.state = state;
+
+        return device;
     }
 
     public static Device getDevice(Ip4Address inetAddress) {
@@ -76,7 +80,11 @@ public class Device {
         Device device = getDevice(inetAddress);
         if (device == null)
             return new Device(inetAddress, productString, modelString, state);
-        else return device;
+
+        if (device.state != state)
+            device.state = state;
+
+        return device;
     }
     //</editor-fold>
 
