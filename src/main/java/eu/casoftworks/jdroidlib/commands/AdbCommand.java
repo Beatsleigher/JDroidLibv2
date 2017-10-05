@@ -27,6 +27,7 @@ package eu.casoftworks.jdroidlib.commands;
 
 import eu.casoftworks.jdroidlib.Device;
 import eu.casoftworks.jdroidlib.enums.CommandType;
+import eu.casoftworks.jdroidlib.interfaces.ICommand;
 
 /**
  * Represents an ADB (Android Debug Bridge) command to be executed
@@ -39,7 +40,7 @@ public class AdbCommand extends Command {
         super(device, cmdType, cmdTag, cmdArguments);
     }
     
-    public class Factory {
+    public static class Factory {
         
         CommandType cmdType = CommandType.AdbCommand;
         String cmdTag = null;
@@ -64,5 +65,37 @@ public class AdbCommand extends Command {
         public AdbCommand create() { return new AdbCommand(device, cmdType, cmdTag, cmdArgs); }
         
     }
-    
+
+    /**
+     * Gets the command for starting the ADB server.
+     * @return An instance of {@link ICommand}
+     */
+    public static AdbCommand getStartServerCommand() {
+        return new Factory().setCommandTag("start-server").create();
+    }
+
+    /**
+     * Gets the command for stopping the ADB server.
+     * @return An instance of {@link ICommand}
+     */
+    public static AdbCommand getStopServerCommand() {
+        return new Factory().setCommandTag("stop-server").create();
+    }
+
+    /**
+     * Gets a command for listing devices connected to the host computer.
+     * @return An instance of {@link ICommand}
+     */
+    public static AdbCommand getDevicesCommand() {
+        return new Factory().setCommandTag("devices").create();
+    }
+
+    /**
+     * Gets a command for listing the devices connected to the host.
+     * @return An instance of {@link ICommand}
+     */
+    public static AdbCommand getDevicesLongCommand() {
+        return new Factory().setCommandTag("devices").setCommandArgs("-l").create();
+    }
+
 }

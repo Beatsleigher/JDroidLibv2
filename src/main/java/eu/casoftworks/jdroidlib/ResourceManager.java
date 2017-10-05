@@ -200,9 +200,13 @@ class ResourceManager implements IResourceManager {
      * Gets the running instance of this class.
      * @return An instance of IResourceManager
      */
-    public static ResourceManager getInstance() { return _instance == null ? (_instance = new ResourceManager()) : _instance; }
+    public static ResourceManager getInstance() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException {
+        return _instance == null ? (_instance = new ResourceManager()) : _instance;
+    }
     
-    private ResourceManager() {}
+    private ResourceManager() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException {
+        init();
+    }
     //</editor-fold>
     
     private File downloadFile(String urlString, String dlLocation) throws MalformedURLException, IOException {
@@ -256,5 +260,17 @@ class ResourceManager implements IResourceManager {
     }
     
     String defaultPlatformToolsDownloadPath() { return String.join(PSEPCHAR, getJDroidLibTmpDirectory(), PTOOLS_FNAME); }
-    
+
+    private void init() throws PlatformNotSupportedException, InterruptedException, ExecutionException, IOException {
+
+        try {
+            getAdb();
+            getFastboot();
+        } catch (FileNotFoundException ex) {
+            // ADB isn't installed
+            installFiles();
+        }
+
+    }
+
 }

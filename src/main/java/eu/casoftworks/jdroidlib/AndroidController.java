@@ -25,12 +25,20 @@
  */
 package eu.casoftworks.jdroidlib;
 
+import eu.casoftworks.jdroidlib.commands.*;
+import eu.casoftworks.jdroidlib.exception.*;
 import eu.casoftworks.jdroidlib.interfaces.*;
+
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class AndroidController {
 
     private final IResourceManager resourceManager;
     private final IExecutioner commander;
+
+    private List<Device> deviceList;
 
     //<editor-fold desc="Singleton and Init" defaultstate="collapsed" >
     private static AndroidController controller;
@@ -41,14 +49,40 @@ public class AndroidController {
      * new instance will be created and then returned.
      * @return The instance of AndroidController
      */
-    public static AndroidController getController() {
+    public static AndroidController getController() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException {
         return controller != null ? controller : (controller = new AndroidController());
     }
 
-    private AndroidController() {
+    private AndroidController() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException {
         resourceManager = ResourceManager.getInstance();
         commander = new Commander(resourceManager);
+        deviceList = new ArrayList<>();
     }
     //</editor-fold>
+
+    /**
+     * Starts the ADB server.
+     * @throws IllegalDeviceStateException
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    public void startServer() throws IllegalDeviceStateException, InterruptedException, IOException {
+        commander.executeCommandNoOutputAsync(AdbCommand.getStartServerCommand());
+    }
+
+    public void stopServer() throws IllegalDeviceStateException, InterruptedException, IOException {
+        commander.executeCommandNoOutputAsync(AdbCommand.getStopServerCommand());
+    }
+
+    /**
+     * Attempts to connect the first found device from the list of devices.
+     * @return The first (connected) device found.
+     */
+    public Device getDevice() {
+        if (deviceList.isEmpty())
+            return null;
+
+        return deviceList.get(0);
+    }
 
 }
