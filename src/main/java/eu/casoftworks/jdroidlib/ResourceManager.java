@@ -11,6 +11,7 @@ import eu.casoftworks.jdroidlib.util.OsCheck;
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
@@ -35,7 +36,7 @@ class ResourceManager implements IResourceManager {
     
     public static final String JDROIDLIB_LIB = "jdl_lib";
     
-    public static final String PSEPCHAR = File.pathSeparator;
+    public static final String PSEPCHAR = File.separator;
     
     public static final String PTOOLS_FNAME = "platform-tools.zip";
     
@@ -138,7 +139,7 @@ class ResourceManager implements IResourceManager {
         if (!(dlLocation = new File(defaultPlatformToolsDownloadPath())).exists()) {
             dlLocation = downloadPlatformTools().get();
         }
-        
+
         ZipInputStream zipIStream = new ZipInputStream(new BufferedInputStream(new FileInputStream(dlLocation)));
         File outputDir = new File(String.join(PSEPCHAR, getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR));
         
@@ -149,18 +150,26 @@ class ResourceManager implements IResourceManager {
         
         // Write compressed files to FS
         ZipEntry entry = zipIStream.getNextEntry();
-        byte[] buffer = new byte[2048];
+        byte[] buffer = new byte[4096];
         while (entry != null){
-            String fileName = entry.getName();
+            String fileName = entry.getName().replace(outputDir.getName(), "");
             File newFile = new File(String.join(PSEPCHAR, outputDir.getAbsolutePath(), fileName));
-            
+
+            if (entry.isDirectory()) {
+                newFile.mkdirs();
+                zipIStream.closeEntry();
+                entry = zipIStream.getNextEntry();
+                continue;
+            }
+
             //create directories for subdirectories in zip
-            newFile.getAbsoluteFile().mkdirs();
+            newFile.getParentFile().mkdirs();
             FileOutputStream fileOStream = new FileOutputStream(newFile);
             int len;
             while ((len = zipIStream.read(buffer)) > 0) {
                 fileOStream.write(buffer, 0, len);
             }
+            fileOStream.flush();
             fileOStream.close();
             //close this ZipEntry
             zipIStream.closeEntry();
@@ -214,36 +223,23 @@ class ResourceManager implements IResourceManager {
         HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
         List<Byte> allBytes = new ArrayList<>();
         File localPath = new File(dlLocation);
-        
+        localPath.getParentFile().mkdirs();
+        localPath.createNewFile();
+
         // Check stuff
         if (urlString.isEmpty())
             throw new IllegalArgumentException("URL must not be empty!");
-        if (dlLocation.isEmpty() | !localPath.isFile())
+        if (dlLocation.isEmpty())
+            throw new IllegalArgumentException("No download path specified!");
+        if (localPath.exists() && localPath.isDirectory())
             throw new IllegalArgumentException("The referenced file must be a FILE and not a DIRECTORY!");
         
         // Download file
         try (InputStream iStream = urlConnection.getInputStream()) {
-            byte[] buffer = new byte[4096];
-            while (iStream.read(buffer, 0, 4096) > -1) {
-                for (Byte b : buffer)
-                    allBytes.add(b); // "The good ol' manual way". Fuck that...
-            }
+            Files.copy(iStream, localPath.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
         
-        // Flush to disk
-        try (FileOutputStream foutStream = new FileOutputStream(localPath)) {
-            // This would be so much easier using C#...
-            // For JDroidLib!
-            byte[] buffer = new byte[allBytes.size()];
-            
-            for (int i = 0; i < allBytes.size(); i++) {
-               buffer[i] = allBytes.get(i);
-            }
-            
-            foutStream.write(buffer);
-        }
-        
-        return localPath.getParentFile();
+        return localPath;
         
     }
     
