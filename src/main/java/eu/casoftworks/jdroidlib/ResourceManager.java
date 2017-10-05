@@ -202,7 +202,7 @@ class ResourceManager implements IResourceManager {
      */
     public static ResourceManager getInstance() { return _instance == null ? (_instance = new ResourceManager()) : _instance; }
     
-    ResourceManager() {}
+    private ResourceManager() {}
     //</editor-fold>
     
     private File downloadFile(String urlString, String dlLocation) throws MalformedURLException, IOException {
