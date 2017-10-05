@@ -183,6 +183,13 @@ public class AndroidController implements IExecutioner {
         executeCommandNoOutput(AdbCommand.getDisconnectAllDevicesCommand());
     }
 
+    /**
+     * Refrshes the list of devices connected to the host.
+     * @throws IllegalDeviceStateException
+     * @throws InterruptedException
+     * @throws IOException
+     * @throws ExecutionException
+     */
     public void refreshDevices() throws IllegalDeviceStateException, InterruptedException, IOException, ExecutionException {
         deviceList.clear();
         try (BufferedReader reader = new BufferedReader(new StringReader(commander.executeCommandReturnOutputAsync(AdbCommand.getDevicesLongCommand()).get()))) {
@@ -202,6 +209,17 @@ public class AndroidController implements IExecutioner {
                 }
             }
         }
+    }
+
+    /**
+     * Gets all the devices connected to the host.
+     * @return A {@link List<Device>} containing all the device's connected to the host.
+     *
+     * @see List
+     * @see Device
+     */
+    public List<Device> getDeviceList() {
+        return deviceList;
     }
 
     private ITuple5<String, String, String, String, String> parseDeviceOutputLine(String line) {
