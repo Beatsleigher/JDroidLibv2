@@ -46,7 +46,7 @@ public interface IExecutioner {
      * @param command The command to executed.
      * @see ICommand
      */
-    void executeCommandNoOutput(ICommand command) throws IOException, IllegalDeviceStateException;
+    void executeCommandNoOutput(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException;
 
     /**
      * Executes a command (defined by passing an ICommand object)
@@ -55,7 +55,7 @@ public interface IExecutioner {
      * @return The command output.
      * @see ICommand
      */
-    String executeCommandReturnOutput(ICommand command) throws IOException, IllegalDeviceStateException;
+    String executeCommandReturnOutput(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException;
 
     /**
      * Executes a command (defined by passing an ICommand object)
@@ -64,7 +64,7 @@ public interface IExecutioner {
      * @return The process's exit code.
      * @see ICommand
      */
-    int executeCommandReturnExitCode(ICommand command) throws IOException, IllegalDeviceStateException;
+    int executeCommandReturnExitCode(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException;
 
     /**
      * Executes a command (defined by passing an ICommand object)
@@ -76,7 +76,7 @@ public interface IExecutioner {
      * @see ICommand
      * @see ITuple2
      */
-    ITuple2<Integer, String> executeCommand(ICommand command) throws IOException, IllegalDeviceStateException;
+    ITuple2<Integer, String> executeCommand(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException;
 
     /**
      * Executes a command (defined by passing an ICommand object)
@@ -87,7 +87,7 @@ public interface IExecutioner {
      * @see ICommand
      * @see Process
      */
-    Process executeCommandReturnProcess(ICommand command) throws IOException, IllegalDeviceStateException;
+    Process executeCommandReturnProcess(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException;
 
     // Define Async methods now
 
@@ -100,7 +100,7 @@ public interface IExecutioner {
      * @see ICommand
      * @see Future
      */
-    Future executeCommandNoOutputAsync(ICommand command) throws IOException, IllegalDeviceStateException;
+    Future executeCommandNoOutputAsync(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException;
 
     /**
      * Executes a command (defined by passing an ICommand object)
@@ -114,7 +114,7 @@ public interface IExecutioner {
      * @see Future
      *
      */
-    Future<String> executeCommandReturnOutputAsync(ICommand command) throws IOException, IllegalDeviceStateException;
+    Future<String> executeCommandReturnOutputAsync(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException;
 
     /**
      * Executes a command (defined by passing an ICommand object)
@@ -126,7 +126,7 @@ public interface IExecutioner {
      * @see ICommand
      * @see Future
      */
-    Future<Integer> executeCommandReturnExitCodeAsync(ICommand command) throws IOException, IllegalDeviceStateException;
+    Future<Integer> executeCommandReturnExitCodeAsync(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException;
 
     /**
      * Execute a command (defined by passing an ICommand object)
@@ -140,7 +140,7 @@ public interface IExecutioner {
      * @see ICommand
      * @see Future
      */
-    Future<ITuple2<Integer, String>> executeCommandAsync(ICommand command) throws IOException, IllegalDeviceStateException;
+    Future<ITuple2<Integer, String>> executeCommandAsync(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException;
 
     /**
      * Executes a command (defined by passing an ICommand object)
@@ -153,6 +153,34 @@ public interface IExecutioner {
      * @see ICommand
      * @Future
      */
-    Future<Process> executeCommandReturnProcessAsync(ICommand command) throws IOException, IllegalDeviceStateException;
+    Future<Process> executeCommandReturnProcessAsync(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException;
+
+    /**
+     * Gets the timeout for the current object.
+     * @return
+     */
+    long getTimeout();
+
+    /**
+     * Sets the timeout for this object.
+     * @param timeout The time to wait before forcfully terminating a process.
+     */
+    void setTimeout(long timeout);
+
+    /**
+     * Gets the unit of time for the timeout.
+     * @return The unit of time.
+     *
+     * @see TimeUnit
+     */
+    TimeUnit getTimeUnit();
+
+    /**
+     * Sets the unit of time for the timeout.
+     * @param timeUnit The unit of time.
+     *
+     * @see TimeUnit
+     */
+    void setTimeUnit(TimeUnit timeUnit);
 
 }

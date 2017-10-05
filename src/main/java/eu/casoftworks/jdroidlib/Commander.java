@@ -5,12 +5,10 @@
  */
 package eu.casoftworks.jdroidlib;
 
-import eu.casoftworks.jdroidlib.commands.AdbCommand;
-import eu.casoftworks.jdroidlib.enums.DeviceState;
 import eu.casoftworks.jdroidlib.exception.IllegalDeviceStateException;
 import eu.casoftworks.jdroidlib.interfaces.*;
+import eu.casoftworks.jdroidlib.util.*;
 
-import javax.annotation.Resource;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -22,38 +20,86 @@ import java.util.concurrent.*;
 class Commander implements IExecutioner {
     
     private final IResourceManager resMan;
-    
+    private long timeout = 120; // Default is two (2) minutes.
+    private TimeUnit timeoutTimeUnit = TimeUnit.SECONDS;
+
+    /**
+     * Default and only constructor available for this class.
+     * @param resMan
+     */
     Commander(IResourceManager resMan) {
         this.resMan = resMan;
     }
-    
+
     /**
-     * Takes an instance of ICommand, determines what type of command it is and 
-     * passes it through to the correct methods.
-     * This method does not return command output!
-     * @param command The command to execute.
+     * {@inheritDoc}
+     * @param command The command to executed.
+     * @throws IOException If an I/O exception occurs
+     * @throws IllegalDeviceStateException If the {@link Device} is in an illegal state while attempting to
+     * execute a command on it.
+     * @throws InterruptedException If the thread is interrupted during process execution.
      */
-    public void executeCommandNoOutput(ICommand command) throws IOException, IllegalDeviceStateException {
-        executeCommandReturnProcess(command);
+    @Override
+    public void executeCommandNoOutput(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException {
+        executeCommandReturnProcess(command).waitFor(timeout, timeoutTimeUnit);
     }
 
+    /**
+     * {@inheritDoc}
+     * @param command The command to execute.
+     * @return The command's output.
+     * @throws IOException If an I/O exception occurs
+     * @throws IllegalDeviceStateException If the {@link Device} is in an illegal state while attempting to
+     * execute a command on it.
+     * @throws InterruptedException If the thread is interrupted during process execution.
+     */
     @Override
-    public String executeCommandReturnOutput(ICommand command) throws IOException, IllegalDeviceStateException {
-        return null;
+    public String executeCommandReturnOutput(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException {
+        return executeCommand(command).getItem2();
     }
 
+    /**
+     * {@inheritDoc}
+     * @param command The command to execute.
+     * @return The process's exit code.
+     * @throws IOException If an I/O exception occurs
+     * @throws IllegalDeviceStateException If the {@link Device} is in an illegal state while attempting to
+     * execute a command on it.
+     * @throws InterruptedException If the thread is interrupted during process execution.
+     */
     @Override
-    public int executeCommandReturnExitCode(ICommand command) throws IOException, IllegalDeviceStateException {
-        return 0;
+    public int executeCommandReturnExitCode(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException {
+        return executeCommand(command).getItem1();
     }
 
+    /**
+     * {@inheritDoc}
+     * @param command The command to execute.
+     * @return Both the process's exit code and the command's output.
+     * @throws IOException If an I/O exception occurs
+     * @throws IllegalDeviceStateException If the {@link Device} is in an illegal state while attempting to
+     * execute a command on it.
+     * @throws InterruptedException If the thread is interrupted during process execution.
+     */
     @Override
-    public ITuple2<Integer, String> executeCommand(ICommand command) throws IOException, IllegalDeviceStateException {
-        return null;
+    public ITuple2<Integer, String> executeCommand(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException {
+        Process proc = executeCommandReturnProcess(command);
+        String output = getProcessOutput(proc);
+        int exitCode = getExitCode(proc);
+        return new Tuple2<Integer, String>(exitCode, output);
     }
 
+    /**
+     * {@inheritDoc}
+     * @param command The command to execute.
+     * @return The actual process being executed.
+     * @throws IOException If an I/O exception occurs
+     * @throws IllegalDeviceStateException If the {@link Device} is in an illegal state while attempting to
+     * execute a command on it.
+     * @throws InterruptedException If the thread is interrupted during process execution.
+     */
     @Override
-    public Process executeCommandReturnProcess(ICommand command) throws IOException, IllegalDeviceStateException {
+    public Process executeCommandReturnProcess(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException {
 
         /**
          * Synchronize (lock) on to the LOCK object
@@ -75,30 +121,104 @@ class Commander implements IExecutioner {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * @param command The command to execute.
+     * @return The task being executed.
+     * @throws IOException If an I/O exception occurs
+     * @throws IllegalDeviceStateException If the {@link Device} is in an illegal state while attempting to
+     * execute a command on it.
+     * @throws InterruptedException If the thread is interrupted during process execution.
+     */
     @Override
-    public Future executeCommandNoOutputAsync(ICommand command) throws IOException, IllegalDeviceStateException {
-        return null;
+    public Future executeCommandNoOutputAsync(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException {
+        return new FutureTask(() -> { executeCommandNoOutput(command); return null; });
     }
 
+    /**
+     * {@inheritDoc}
+     * @param command The command to execute.
+     * @return The task being executed and the command's output.
+     * @throws IOException If an I/O exception occurs
+     * @throws IllegalDeviceStateException If the {@link Device} is in an illegal state while attempting to
+     * execute a command on it.
+     * @throws InterruptedException If the thread is interrupted during process execution.
+     */
     @Override
-    public Future<String> executeCommandReturnOutputAsync(ICommand command) throws IOException, IllegalDeviceStateException {
-        return null;
+    public Future<String> executeCommandReturnOutputAsync(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException {
+        return new FutureTask<>(() -> executeCommandReturnOutput(command));
     }
 
+    /**
+     * {@inheritDoc}
+     * @param command The command to execute.
+     * @return The task being executed and the process's exit code.
+     * @throws IOException If an I/O exception occurs
+     * @throws IllegalDeviceStateException If the {@link Device} is in an illegal state while attempting to
+     * execute a command on it.
+     * @throws InterruptedException If the thread is interrupted during process execution.
+     */
     @Override
-    public Future<Integer> executeCommandReturnExitCodeAsync(ICommand command) throws IOException, IllegalDeviceStateException {
-        return null;
+    public Future<Integer> executeCommandReturnExitCodeAsync(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException {
+        return new FutureTask<>(() -> executeCommandReturnExitCode(command));
     }
 
+    /**
+     * {@inheritDoc}
+     * @param command The command to execute.
+     * @return The task being executed along with both the process's exit code and the command's output.
+     * @throws IOException If an I/O exception occurs
+     * @throws IllegalDeviceStateException If the {@link Device} is in an illegal state while attempting to
+     * execute a command on it.
+     * @throws InterruptedException If the thread is interrupted during process execution.
+     */
     @Override
-    public Future<ITuple2<Integer, String>> executeCommandAsync(ICommand command) throws IOException, IllegalDeviceStateException {
-        return null;
+    public Future<ITuple2<Integer, String>> executeCommandAsync(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException {
+        return new FutureTask<>(() -> executeCommand(command));
     }
 
+    /**
+     * {@inheritDoc}
+     * @param command The command to execute.
+     * @return The task being executed along with the actual executing process.
+     * @throws IOException If an I/O exception occurs
+     * @throws IllegalDeviceStateException If the {@link Device} is in an illegal state while attempting to
+     * execute a command on it.
+     * @throws InterruptedException If the thread is interrupted during process execution.
+     */
     @Override
-    public Future<Process> executeCommandReturnProcessAsync(ICommand command) throws IOException, IllegalDeviceStateException {
-        return null;
+    public Future<Process> executeCommandReturnProcessAsync(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException {
+        return new FutureTask<>(() -> executeCommandReturnProcess(command));
     }
+
+    /**
+     * {@inheritDoc}
+     * @return
+     */
+    @Override
+    public long getTimeout() { return timeout; }
+
+    /**
+     * {@inheritDoc}
+     * @param timeout The time to wait before forcfully terminating a process.
+     */
+    @Override
+    public void setTimeout(long timeout) { this.timeout = timeout; }
+
+    /**
+     * {@inheritDoc}
+     * @return
+     */
+    @Override
+    public TimeUnit getTimeUnit() { return timeoutTimeUnit; }
+
+    /**
+     * {@inheritDoc}
+     * @param timeUnit The unit of time.
+     *
+     */
+    @Override
+    public void setTimeUnit(TimeUnit timeUnit) { this.timeoutTimeUnit = timeUnit; }
 
     /**
      * Prepares all the arguments as required to execute the process.
@@ -107,7 +227,7 @@ class Commander implements IExecutioner {
      * @throws IOException If an I/O error occurs.
      * @throws IllegalDeviceStateException If the targeted device (if any) is in an illegal state.
      */
-    private List<String> getProcArgs(ICommand command) throws IOException, IllegalDeviceStateException {
+    private List<String> getProcArgs(ICommand command) throws IOException, IllegalDeviceStateException, InterruptedException {
         List<String> args = new ArrayList<>();
         
         switch (command.getCommandType()) {
@@ -214,6 +334,28 @@ class Commander implements IExecutioner {
             }
         }
         return sBuilder.toString();
+    }
+
+    /**
+     * Waits for the passed process to end, if it hasn't already
+     * and returns the process's exit code.
+     * @param proc The process to get the exit code for.
+     * @return The process's exit code.
+     * @throws InterruptedException If the thread was interrupted during waiting.
+     *
+     * @see Process
+     *
+     */
+    private int getExitCode(Process proc) throws InterruptedException {
+        if (!proc.isAlive()) {
+            return proc.exitValue();
+        }
+
+        if (!proc.waitFor(timeout, timeoutTimeUnit)) {
+            proc.destroy();
+        }
+
+        return getExitCode(proc);
     }
 
 }
