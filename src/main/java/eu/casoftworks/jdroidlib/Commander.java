@@ -25,6 +25,7 @@
  */
 package eu.casoftworks.jdroidlib;
 
+import eu.casoftworks.jdroidlib.device.*;
 import eu.casoftworks.jdroidlib.exception.IllegalDeviceStateException;
 import eu.casoftworks.jdroidlib.interfaces.*;
 import eu.casoftworks.jdroidlib.util.*;

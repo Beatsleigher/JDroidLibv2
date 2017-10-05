@@ -25,7 +25,7 @@
  */
 package eu.casoftworks.jdroidlib.commands;
 
-import eu.casoftworks.jdroidlib.Device;
+import eu.casoftworks.jdroidlib.device.Device;
 import eu.casoftworks.jdroidlib.enums.CommandType;
 
 /**

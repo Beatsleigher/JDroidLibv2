@@ -66,5 +66,28 @@ public enum AndroidVersion {
     }
  
     double getVersionNumber() { return versionNumber; }
-    
+
+    /**
+     * Gets a value from this enumeration via a version string from Android
+     * @param versionString The version to attempt to retrieve.
+     * @return The desired Android version
+     */
+    public static AndroidVersion fromVersionString(String versionString) {
+        String[] splitString = versionString.split(".", 2);
+        double parsableVersion = Double.parseDouble(String.join(".", splitString));
+
+        for (AndroidVersion version : values())
+            if (version.versionNumber == parsableVersion)
+                return version;
+        return Unknown;
+
+    }
+
+    public static AndroidVersion fromVersionNumber(double versionNumber) {
+        for (AndroidVersion version : values())
+            if (version.versionNumber == versionNumber)
+                return version;
+        return Unknown;
+    }
+
 }

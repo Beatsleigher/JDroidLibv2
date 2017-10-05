@@ -25,7 +25,7 @@
  */
 package eu.casoftworks.jdroidlib.commands;
 
-import eu.casoftworks.jdroidlib.Device;
+import eu.casoftworks.jdroidlib.device.Device;
 import eu.casoftworks.jdroidlib.enums.CommandType;
 
 /**
@@ -57,7 +57,7 @@ public class AdbShellCommand extends AdbCommand {
      */
     public boolean runAsRoot() { return runAsRoot; }
     
-    public class Factory {
+    public static class Factory {
         
         private Device device;
         private CommandType cmdType = CommandType.AdbShellCommand;
@@ -88,5 +88,22 @@ public class AdbShellCommand extends AdbCommand {
         public AdbShellCommand create() { return new AdbShellCommand(device, cmdType, cmdTag, runAsRoot, cmdArgs); }
         
     }
-    
+
+    /**
+     * Gets an instance of {@link eu.casoftworks.jdroidlib.interfaces.ICommand} to retrieve the version of Android installed on the device.
+     * @return An instance of {@link eu.casoftworks.jdroidlib.interfaces.ICommand}
+     */
+    public static AdbShellCommand getRetrieveAndroidVersionCommand(Device device) {
+        return new Factory().setCommandTag("getprop").setCommandArgs("ro.build.version.release").setDevice(device).create();
+    }
+
+    /**
+     * Gets an instance of {@link eu.casoftworks.jdroidlib.interfaces.ICommand} to retrieve
+     * the SDk version of the device.
+     * @return
+     */
+    public static AdbShellCommand getRetrieveAndroidSdkVersionCommand(Device device) {
+        return new Factory().setCommandTag("getprop").setCommandArgs("ro.build.version.sdk").setDevice(device).create();
+    }
+
 }

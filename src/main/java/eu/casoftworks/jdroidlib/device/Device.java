@@ -23,52 +23,113 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package eu.casoftworks.jdroidlib;
+package eu.casoftworks.jdroidlib.device;
 
+import eu.casoftworks.jdroidlib.*;
+import eu.casoftworks.jdroidlib.commands.*;
 import eu.casoftworks.jdroidlib.enums.*;
+import eu.casoftworks.jdroidlib.exception.*;
 import eu.casoftworks.jdroidlib.util.Ip4Address;
+
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Represents a physical device.
  * @author Simon Cahill
  */
 public class Device {
-    
+
+    //<editor-fold desc="Static Members" defaultstate="collapsed" >
+
+    private static List<Device> encounteredDevices;
+
+    static {
+        encounteredDevices = new ArrayList<>();
+    }
+
+    public static Device getDevice(String serialNo) {
+        for (Device device : encounteredDevices) {
+            if (device.serialNo.contentEquals(serialNo))
+                return device;
+        }
+        return null;
+    }
+
+    public static Device getDevice(String serialNo, String productString, String modelString, DeviceState state) {
+        Device device = getDevice(serialNo);
+        if (device == null)
+            return new Device(serialNo, productString, modelString, state);
+        else return device;
+    }
+
+    public static Device getDevice(Ip4Address inetAddress) {
+        for (Device device : encounteredDevices) {
+            if (device.ipAddr == inetAddress)
+                return device;
+        }
+        return null;
+    }
+
+    public static Device getDevice(Ip4Address inetAddress, String productString, String modelString, DeviceState state) {
+        Device device = getDevice(inetAddress);
+        if (device == null)
+            return new Device(inetAddress, productString, modelString, state);
+        else return device;
+    }
+    //</editor-fold>
+
     private final AndroidVersion version;
+    private final double sdkVersion;
     private final String serialNo;
     private final Ip4Address ipAddr;
     private final boolean connectedViaTcpIp;
+    private final String productString;
+    private final String modelString;
     private DeviceState state;
     
     /**
      * Constructor for devices connected via USB and/or emulated devices.
      * @param serialNo The device's serial number (at least the one seen by ADB)
-     * @param version The Android version currently installed on the device.
+     * @param productString The device's product string
+     * @param modelString The device's model string
      * @param state The current state of the device.
      */
-    Device(String serialNo, AndroidVersion version, DeviceState state) {
+    Device(String serialNo, String productString, String modelString, DeviceState state) {
         this.serialNo = serialNo;
-        this.version = version;
+        this.productString = productString;
+        this.modelString = modelString;
         this.state = state;
         this.ipAddr = null;
         this.connectedViaTcpIp = false;
+        version = setAndroidVersion();
+        sdkVersion = setSdkVersion();
     }
     
     /**
      * Constructor for devices connected via TCP/IP.
      * @param ipAddr The IP address of the device in string form.
      * @param port The port of the device. If set to 0 (zero), {@link Ip4Address#ADB_DEFAULT_PORT} will be used!
-     * @param version The Android version installed on the device.
+     * @param productString The device's product string.
+     * @param modelString The device's model string.
      * @param state The device's current state.
      */
-    Device (String ipAddr, short port, AndroidVersion version, DeviceState state) {
-        this.ipAddr = Ip4Address.fromAddress(ipAddr, port);
+    Device (String ipAddr, short port, String productString, String modelString, DeviceState state) {
+        this(Ip4Address.fromAddress(ipAddr, port), productString, modelString, state);
+    }
+
+    Device (Ip4Address ipAddr, String productString, String modelString, DeviceState state) {
+        this.ipAddr = ipAddr;
         connectedViaTcpIp = true;
-        this.version = version;
+        this.productString = productString;
+        this.modelString = modelString;
         this.state = state;
         this.serialNo = null;
+        version = setAndroidVersion();
+        sdkVersion = setSdkVersion();
     }
-    
+
     //<editor-fold desc="Getter methods for final variables" defaultstate="collapsed" >
     /**
      * Gets the version of Android currently installed on the device.
@@ -97,8 +158,53 @@ public class Device {
      * @return {@code true} if the device is connected via TCP/IP. {@code false} otherwise.
      */
     public boolean isConnectedViaTcpIp() { return connectedViaTcpIp; }
+
+    /**
+     * Gets the device's product string.
+     * @return The product ID.
+     */
+    public String getProductString() { return  productString; }
+
+    /**
+     * Gets the device's model string.
+     * @return The model ID.
+     */
+    public String getModelString() { return  modelString; }
     //</editor-fold>
-    
+
+    /**
+     * Sets the device's Android version.
+     * @return The version of Android installed on the device.
+     *
+     * @see AndroidVersion
+     */
+    private AndroidVersion setAndroidVersion() {
+        try {
+            return AndroidVersion.fromVersionString(AndroidController.getController().executeCommandReturnOutput(AdbShellCommand.getRetrieveAndroidVersionCommand(this)));
+        } catch (Exception e) {
+            // General catch; if anything goes wrong print the stack trace
+            // and return an unknown Android version.
+            e.printStackTrace();
+        }
+        return AndroidVersion.Unknown;
+    }
+
+    /**
+     * Sets the device's SDK version.
+     * @return
+     */
+    private double setSdkVersion() {
+        try {
+            return Double.parseDouble(
+                    AndroidController.getController().executeCommandReturnOutput(AdbShellCommand.getRetrieveAndroidSdkVersionCommand(this))
+            );
+        } catch (Exception e) {
+            // Same as with the Android version
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
     /**
      * Gets the device's current state.
      * @see DeviceState

@@ -5,7 +5,7 @@
  */
 package eu.casoftworks.jdroidlib.interfaces;
 
-import eu.casoftworks.jdroidlib.Device;
+import eu.casoftworks.jdroidlib.device.Device;
 import eu.casoftworks.jdroidlib.enums.*;
 
 import java.util.*;

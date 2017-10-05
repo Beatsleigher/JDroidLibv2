@@ -30,6 +30,7 @@ package eu.casoftworks.jdroidlib.exception;
  * E.g. when a command is targeted towards an unauthorized device.
  * @author Simon Cahill
  */
+
 public class IllegalDeviceStateException extends DeviceException {
     
     public IllegalDeviceStateException() {

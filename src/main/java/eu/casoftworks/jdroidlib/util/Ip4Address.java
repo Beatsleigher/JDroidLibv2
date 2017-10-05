@@ -34,6 +34,8 @@ public class Ip4Address {
     public static final short ADB_DEFAULT_PORT = 5555;
     
     public static final String IP_MATCH_REGEX = "([0-9]{1,3}[\\.]){3}[0-9]{1,3}";
+
+    public static final String IP_PORT_MATCH_REGEX = "(([0-9]{1,3}[\\.]){3}[0-9]{1,3})[\\:][0-9]{1,5}";
     
     private final byte[] addressBytes;
     private final short port;
@@ -77,7 +79,17 @@ public class Ip4Address {
      * @param address The IP address in string form.
      * @return An instance of {@link Ip4Address}
      */
-    public static Ip4Address fromAddress(String address) { return new Ip4Address(getIpFromString(address)); }
+    public static Ip4Address fromAddress(String address) {
+        if (!isIp4Address(address))
+            throw new IllegalArgumentException("address must be a valid IP!");
+
+        if (address.contains(":")) {
+            String[] splits = address.split(":");
+            return fromAddress(splits[0], Short.parseShort(splits[1]));
+        }
+
+        return fromIp(getIpFromString(address));
+    }
     
     /**
      * Returns an instance of {@link Ip4Address} from the given address and port.
@@ -120,6 +132,11 @@ public class Ip4Address {
      * @param segments The byte[] representation of the IP address.
      */
     public static void getIpFromString(String ipAddress, byte[] segments) {
+
+        if (ipAddress.contains(":")) {
+            ipAddress = ipAddress.split(":")[1];
+        }
+
         if (!ipAddress.matches(IP_MATCH_REGEX))
             throw new IllegalArgumentException("Invalid IP address found!");
         if (segments == null || segments.length != 4)
@@ -132,5 +149,15 @@ public class Ip4Address {
         }
         
     }
-    
+
+    /**
+     * Determines whether a given string is an IP address or not.
+     * Will also return {@code true} if the IP address has a port!
+     * @param ipAddress The string to check.
+     * @return {@code true} if the string is an IP address, {@code false} otherwise.
+     */
+    public static boolean isIp4Address(String ipAddress) {
+        return ipAddress.matches(IP_MATCH_REGEX) | ipAddress.matches(IP_PORT_MATCH_REGEX);
+    }
+
 }
