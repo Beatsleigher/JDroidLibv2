@@ -61,3 +61,5 @@ fabric.properties
 ## Exclude compiled stuff
 target/
 
+
+*.class
