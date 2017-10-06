@@ -75,7 +75,7 @@ class ResourceManager implements IResourceManager {
     public Future<File> downloadPlatformTools(String location) throws PlatformNotSupportedException {
         OsCheck.OSType osType = OsCheck.getOperatingSystemType();
         FutureTask<File> task = null;
-        
+
         switch (osType) {
             default:
             case Other:
@@ -91,15 +91,15 @@ class ResourceManager implements IResourceManager {
                         if (outputFile == null)
                             return null;
                     }
-                    
+
                     return outputFile;
-                    
+
                 });
                 break;
             case MacOS:
                 task = new FutureTask<>(() -> {
                    File outputFile = null;
-                   
+
                     try {
                         outputFile = downloadFile(LATEST_PTOOLS_MAC, location);
                     } catch (IOException ex) {
@@ -108,14 +108,14 @@ class ResourceManager implements IResourceManager {
                         if (outputFile == null)
                             return null;
                     }
-                    
+
                     return outputFile;
                 });
                 break;
             case Windows:
                 task = new FutureTask<>(() -> {
                     File outputFile = null;
-                    
+
                     try {
                         outputFile = downloadFile(LATEST_PTOOLS_WIN, location);
                     } catch (IOException ex) {
@@ -128,7 +128,7 @@ class ResourceManager implements IResourceManager {
                 });
                 break;
         }
-        
+
         task.run();
         return task;
     }
@@ -142,12 +142,12 @@ class ResourceManager implements IResourceManager {
 
         ZipInputStream zipIStream = new ZipInputStream(new BufferedInputStream(new FileInputStream(dlLocation)));
         File outputDir = new File(String.join(PSEPCHAR, getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR));
-        
+
         // Check if output exists
         if (!outputDir.exists()) {
             outputDir.mkdirs();
         }
-        
+
         // Write compressed files to FS
         ZipEntry entry = zipIStream.getNextEntry();
         byte[] buffer = new byte[4096];
@@ -187,7 +187,7 @@ class ResourceManager implements IResourceManager {
     public File getAdb() throws FileNotFoundException {
         OsCheck.OSType osType = OsCheck.getOperatingSystemType();
         File adb = new File(String.join(PSEPCHAR, getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR, osType == OsCheck.OSType.Windows ? ADB_BIN_EXE : ADB_BIN));
-        if (adb.exists()) 
+        if (adb.exists())
             return adb;
         else throw new FileNotFoundException("ADB was not found on this system! Install ADB to continue!");
     }
@@ -196,15 +196,15 @@ class ResourceManager implements IResourceManager {
     public File getFastboot() throws FileNotFoundException {
         OsCheck.OSType osType = OsCheck.getOperatingSystemType();
         File adb = new File(String.join(PSEPCHAR, getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR, osType == OsCheck.OSType.Windows ? FASTBOOT_BIN_EXE : FASTBOOT_BIN));
-        if (adb.exists()) 
+        if (adb.exists())
             return adb;
         else throw new FileNotFoundException("Fastboot was not found on this system! Install fastboot to continue!");
     }
     //</editor-fold>
-    
+
     //<editor-fold desc="Singleton" defaultstate="collapsed" >
     private static ResourceManager _instance;
-    
+
     /**
      * Gets the running instance of this class.
      * @return An instance of IResourceManager
@@ -212,12 +212,12 @@ class ResourceManager implements IResourceManager {
     public static ResourceManager getInstance() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException {
         return _instance == null ? (_instance = new ResourceManager()) : _instance;
     }
-    
+
     private ResourceManager() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException {
         init();
     }
     //</editor-fold>
-    
+
     private File downloadFile(String urlString, String dlLocation) throws MalformedURLException, IOException {
         URL url = new URL(urlString);
         HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
@@ -233,28 +233,28 @@ class ResourceManager implements IResourceManager {
             throw new IllegalArgumentException("No download path specified!");
         if (localPath.exists() && localPath.isDirectory())
             throw new IllegalArgumentException("The referenced file must be a FILE and not a DIRECTORY!");
-        
+
         // Download file
         try (InputStream iStream = urlConnection.getInputStream()) {
             Files.copy(iStream, localPath.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
-        
+
         return localPath;
-        
+
     }
-    
+
     String getJDroidLibHomeDirectory() {
         return String.join(PSEPCHAR, System.getProperty("user.home"), JDROIDLIB_HOME);
     }
-    
+
     String getJDroidLibTmpDirectory() {
         return String.join(PSEPCHAR, getJDroidLibHomeDirectory(), JDROIDLIB_TMP);
     }
-    
+
     String getJDroidLibLibDirectory() {
         return String.join(PSEPCHAR, getJDroidLibHomeDirectory(), JDROIDLIB_LIB);
     }
-    
+
     String defaultPlatformToolsDownloadPath() { return String.join(PSEPCHAR, getJDroidLibTmpDirectory(), PTOOLS_FNAME); }
 
     private void init() throws PlatformNotSupportedException, InterruptedException, ExecutionException, IOException {
