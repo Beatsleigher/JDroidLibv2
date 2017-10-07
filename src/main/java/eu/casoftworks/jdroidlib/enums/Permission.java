@@ -26,6 +26,20 @@ public enum Permission {
             if (permission.octal == octal)
                 return permission;
         }
+        return null;
+    }
+
+    public static int getOctal(EnumSet<Permission> permissions) {
+        int result = 0;
+        for (Permission perm : permissions) {
+            if (result < 7)
+                result = result | perm.octal;
+            else
+                throw new UnsupportedOperationException(String.format("Permission octal has max of 7! Current perm octal would be %d!", (result | perm.octal)));
+        }
+
+        return result;
+
     }
 
 }

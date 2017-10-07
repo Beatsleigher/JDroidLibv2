@@ -29,6 +29,7 @@ import eu.casoftworks.jdroidlib.*;
 import eu.casoftworks.jdroidlib.commands.*;
 import eu.casoftworks.jdroidlib.enums.*;
 import eu.casoftworks.jdroidlib.exception.*;
+import eu.casoftworks.jdroidlib.interfaces.*;
 import eu.casoftworks.jdroidlib.util.Ip4Address;
 
 import java.io.*;
@@ -39,7 +40,7 @@ import java.util.concurrent.*;
  * Represents a physical device.
  * @author Simon Cahill
  */
-public class Device {
+public class Device implements IDevice {
 
     //<editor-fold desc="Static Members" defaultstate="collapsed" >
 
@@ -181,6 +182,16 @@ public class Device {
      */
     public String getModelString() { return  modelString; }
     //</editor-fold>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getID() {
+        if (connectedViaTcpIp) {
+            return ipAddr.toString();
+        } else return serialNo;
+    }
 
     /**
      * Sets the device's Android version.

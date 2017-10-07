@@ -5,8 +5,12 @@ import eu.casoftworks.jdroidlib.device.Device;
 /**
  * Defines a file stored on a {@link Device}'s file system.
  */
-public interface IFile {
+public interface IFile extends IFileSystemEntry {
 
+    String getName();
 
+    boolean hasExtension();
+
+    IDirectory getParentDirectory();
 
 }
