@@ -96,6 +96,8 @@ public class Device {
     private final String productString;
     private final String modelString;
     private DeviceState state;
+
+    private SuperUser su; // Effectively final
     
     /**
      * Constructor for devices connected via USB and/or emulated devices.
@@ -226,5 +228,37 @@ public class Device {
      * @param newState The device's new state (e.g. ONLINE or RECOVERY)
      */
     void setDeviceState(DeviceState newState) { this.state = newState; }
-    
+
+    /**
+     * Gets the version of Android installed on the device
+     * represented by this object.
+     * @return An {@link AndroidVersion} value.
+     */
+    public AndroidVersion getAndroidVersion() { return version; }
+
+    /**
+     * Gets the SDK version installed on the device represented by
+     * this object.
+     * @return
+     */
+    public double getSdkVersion() { return sdkVersion; }
+
+    /**
+     * Gets the {@link SuperUser} object associated with this {@link Device}.
+     * @return An instance of {@link SuperUser}.
+     *
+     * @see SuperUser
+     */
+    public SuperUser getSuperUser() { return su; }
+
+    /**
+     * Shortcut for determining whether a device is rooted or not.
+     * Calls {@link SuperUser#isInstalled()}
+     * @return {@code true} if the {@link Device} is rooted, {@code false} otherwise.
+     *
+     * @see SuperUser
+     * @see SuperUser#isInstalled()
+     */
+    public boolean hasRoot() { return getSuperUser().isInstalled(); }
+
 }
