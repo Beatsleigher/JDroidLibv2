@@ -49,6 +49,8 @@ class ResourceManager implements IResourceManager {
     public static final String FASTBOOT_BIN_EXE = "fastboot.exe";
     
     public static final String FASTBOOT_BIN = "fastboot";
+
+    public static final String SETX_PATH_PERMANENTLY = "setx ";
     //</editor-fold>
     
     /**
@@ -180,7 +182,14 @@ class ResourceManager implements IResourceManager {
 
     @Override
     public void addToSystemPath(File installLocation) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (installLocation == null) {
+            installLocation = defaultPlatformToolsInstallPath();
+        }
+
+        if (OsCheck.getOperatingSystemType() == OsCheck.OSType.Windows) {
+
+        }
+
     }
 
     @Override
@@ -256,6 +265,14 @@ class ResourceManager implements IResourceManager {
     }
 
     String defaultPlatformToolsDownloadPath() { return String.join(PSEPCHAR, getJDroidLibTmpDirectory(), PTOOLS_FNAME); }
+
+    /**
+     * Gets the default installation path for ADB on the host system.
+     * @return A {@link File} pointing to JDroidLib's default platform-tools install directory.
+     */
+    public File defaultPlatformToolsInstallPath() {
+        return new File(String.join(PSEPCHAR, getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR, ""));
+    }
 
     private void init() throws PlatformNotSupportedException, InterruptedException, ExecutionException, IOException {
 
