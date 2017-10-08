@@ -20,7 +20,35 @@ import java.util.zip.ZipException;
  * @author Simon Cahill
  */
 public interface IResourceManager {
-    
+
+    //<editor-fold desc="Constants" defaultstate="collapsed">
+    String LATEST_PTOOLS_WIN = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
+
+    String LATEST_PTOOLS_MAC = "https://dl.google.com/android/repository/platform-tools-latest-darwin.zip";
+
+    String LATEST_PTOOLS_LNX = "https://dl.google.com/android/repository/platform-tools-latest-linux.zip";
+
+    String JDROIDLIB_HOME = ".jdroidlib";
+
+    String JDROIDLIB_TMP = "jdl_tmp";
+
+    String JDROIDLIB_LIB = "jdl_lib";
+
+    String PSEPCHAR = File.separator;
+
+    String PTOOLS_FNAME = "platform-tools.zip";
+
+    String PTOOLS_INSTALL_DIR = "platform-tools";
+
+    String ADB_BIN_EXE = "adb.exe";
+
+    String ADB_BIN = "adb";
+
+    String FASTBOOT_BIN_EXE = "fastboot.exe";
+
+    String FASTBOOT_BIN = "fastboot";
+    //</editor-fold>
+
     /**
      * Downloads the appropriate platform tools for the operating system 
      * and architecture being used by the host.
@@ -87,5 +115,23 @@ public interface IResourceManager {
      * @see java.io.File
      */
     File getFastboot() throws FileNotFoundException;
-    
+
+    static String combinePaths(String... paths) {
+        return String.join(PSEPCHAR, paths);
+    }
+
+    static String getJDroidLibHomeDirectory() {
+        return String.join(PSEPCHAR, System.getProperty("user.home"), JDROIDLIB_HOME);
+    }
+
+    static String getJDroidLibTmpDirectory() {
+        return String.join(PSEPCHAR, getJDroidLibHomeDirectory(), JDROIDLIB_TMP);
+    }
+
+    static String getJDroidLibLibDirectory() {
+        return String.join(PSEPCHAR, getJDroidLibHomeDirectory(), JDROIDLIB_LIB);
+    }
+
+    static String defaultPlatformToolsDownloadPath() { return String.join(PSEPCHAR, getJDroidLibTmpDirectory(), PTOOLS_FNAME); }
+
 }
