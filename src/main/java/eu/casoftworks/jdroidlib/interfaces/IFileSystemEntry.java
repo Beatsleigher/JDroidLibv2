@@ -2,14 +2,38 @@ package eu.casoftworks.jdroidlib.interfaces;
 
 import eu.casoftworks.jdroidlib.device.*;
 import eu.casoftworks.jdroidlib.enums.*;
+import eu.casoftworks.jdroidlib.exception.*;
 import eu.casoftworks.jdroidlib.util.*;
 
+import java.io.*;
 import java.util.*;
 
 /**
  * Defines a filesystem entry on a given device.
  */
 public interface IFileSystemEntry {
+
+    String TOUCH_CMD = "touch";
+    String MKDIR_CMD = "mkdir";
+    String RM_CMD = "rm";
+    String PULL_CMD = "pull";
+    String FILE_CMD = "file";
+    String CAT_CMD = "cat";
+    String STAT_CMD = "stat";
+    String FILE_EXISTS_CMD = "if [ -f {file} ]; then echo \"TOUCHED\"; else echo \"UNTOUCHED\"; fi";
+    String DIR_EXISTS_CMD = "if [ -d {dir} ]; then echo \"TOUCHED\"; else echo \"UNTOUCHED\"; fi";
+
+    String[] STAT_PERMS_ARGS = new String[] { "%a", "%N" };
+
+    String OUTPUT_ERR = "error";
+    String OUTPUT_FILE_EXISTS = "TOUCHED";
+    String OUTPUT_FILE_NOT_EXISTS = "UNTOUCHED";
+
+    String CMD_ARG_FILE = "{file}";
+    String CMD_ARG_DIR = "{dir}";
+
+    String LINUX_PATH_SEPARATOR = "/";
+    String FILE_EXTENSION_PRECHAR = ".";
 
     /**
      * Gets the {@link Device} the file is hosted on.
@@ -21,7 +45,7 @@ public interface IFileSystemEntry {
      * The permissions for the current file system entry.
      * @return The file system entry's permissions.
      */
-    PermissionSet getPermissions();
+    PermissionSet getPermissions() throws DeviceException;
 
     /**
      * Gets the full path of the file system entry.
@@ -40,7 +64,7 @@ public interface IFileSystemEntry {
      * Gets a value indicating whether the file/directory exists.
      * @return {@code true} if the file/directory exists. {@code false} otherwise.
      */
-    boolean exists();
+    boolean exists() throws DeviceException;
 
     /**
      * Gets the owner of the file/directory.
@@ -59,6 +83,33 @@ public interface IFileSystemEntry {
      * @return The sire of the file/directory in bytes.
      */
     long getSize();
+
+    /**
+     * Attempts to pull the file or folder (including contents!) to the host system.
+     * The file/folder will be pulled to a library-generated directory on the host!
+     * @return The new location of the file/folder.
+     *
+     * @see File
+     */
+    File pull() throws FileCouldNotBePulledException;
+
+    /**
+     * Attempts to pull the file/folder (including contents) to a specified location on the host system.
+     * @param location The location to pull the file/folder to.
+     * @return The new location of the file/folder on the host system.
+     *
+     * @see File
+     */
+    File pull(File location) throws FileCouldNotBePulledException;
+
+    /**
+     * Attempts to pull the file/folder (including its contents) to a specified location on the host system.
+     * @param location The location to pull the file/folder to.
+     * @return The new location of the file/folder on the host.
+     *
+     * @see File
+     */
+    File pull(String location) throws FileCouldNotBePulledException;
 
     /**
      * Gets a value indicating whether an instance of this interface represents a file or not.

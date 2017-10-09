@@ -1,6 +1,7 @@
 package eu.casoftworks.jdroidlib.interfaces;
 
 import eu.casoftworks.jdroidlib.device.Device;
+import eu.casoftworks.jdroidlib.exception.*;
 
 import java.io.*;
 
@@ -43,39 +44,48 @@ public interface IFile extends IFileSystemEntry {
      * Attempts to pull the file from the given {@link Device} to a library-specific location on the host.
      * @return The storage location of the pulled file.
      */
-    File pullFile();
+    File pull() throws FileCouldNotBePulledException;
 
     /**
      * Attempts to pull the file from the {@link Device} to a given location on the host.
      * @param location The location to pull the file to.
      * @return The new location of the pulled file. (location/file if file is not specified in location)
      */
-    File pullFile(File location);
+    File pull(File location) throws FileCouldNotBePulledException;
 
     /**
      * The same as {@link IFile#pullFile(File)}.
      * @param location The location to pull the file to.
      * @return The new location of the pulled file on the host.
      */
-    File pullFile(String location);
+    File pull(String location) throws FileCouldNotBePulledException;
 
     /**
      * Attempts to get the file's contents.
      * The file may be pulled to the host in order to retrieve the bytes!
+     *
+     * NOT RECOMMENDED FOR FILES > 30MiB!
+     *
      * @return The file's raw contents.
      */
-    byte[] getContents();
+    byte[] getContents() throws DeviceException;
 
     /**
      * Attempts to get string contents from a file.
      * @return The file's contents.
      */
-    String getContentsAsString();
+    String getContentsAsString() throws DeviceException;
 
     /**
      * Attempts to create a file on the device's file system.
      * @return {@code true} if file creation was successful. {@code false} otherwise.
      */
-    boolean touch();
+    boolean touch() throws CannotTouchException;
+
+    /**
+     * Gets a value indicating whether a file is a text file or not.
+     * @return {@code true} if the file contains text. {@code false} otherwise.
+     */
+    boolean isText() throws DeviceException;
 
 }

@@ -1,10 +1,29 @@
 package eu.casoftworks.jdroidlib.util;
 
+import eu.casoftworks.jdroidlib.device.*;
 import eu.casoftworks.jdroidlib.enums.*;
 
 import java.util.*;
 
 public class PermissionSet {
+
+    /**
+     * Instantiates a new instance of this class via use of `stat %a %N` output.
+     * It is important that the output used matches the output of the above command!
+     * @param statOutput The output produced by executing `stat %a %N` on an Android {@link Device}
+     * @return An instance of this class.
+     *
+     * @see Device
+     * @see eu.casoftworks.jdroidlib.commands.AdbShellCommand
+     */
+    public static PermissionSet fromStatOutput(String statOutput) {
+        return new PermissionSet(
+            // Maybe someone will think of a more efficient way to do this?
+            Integer.parseInt(Character.toString(statOutput.charAt(0))),
+            Integer.parseInt(Character.toString(statOutput.charAt(1))),
+            Integer.parseInt(Character.toString(statOutput.charAt(2)))
+        );
+    }
 
     private final Permission ownerPermissions, groupPermissions, userPermissions;
 

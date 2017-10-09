@@ -5,7 +5,7 @@ import eu.casoftworks.jdroidlib.device.*;
 import java.io.*;
 import java.util.*;
 
-public interface IDirectory {
+public interface IDirectory extends IFileSystemEntry {
 
     /**
      * Gets the name of the directory.
@@ -23,21 +23,21 @@ public interface IDirectory {
      * Attempts to pull the directory (and its contents) from the given {@link Device} to a library-specific location on the host.
      * @return The storage location of the pulled directory.
      */
-    File pullDirectory();
+    File pull();
 
     /**
      * Attempts to pull the directory (and its contents) from the {@link Device} to a given location on the host.
      * @param location The location to pull the directory to.
      * @return The new location of the pulled directory. (location/directory if directory is not specified in location)
      */
-    File pullDirectory(File location);
+    File pull(File location);
 
     /**
      * The same as {@link IDirectory#pullDirectory(File)}.
      * @param location The location to pull the directory to.
      * @return The new location of the pulled directory on the host.
      */
-    File pullDirectory(String location);
+    File pull(String location);
 
     /**
      * Attempts to get all the contents (files and directories) of the directory.
@@ -62,5 +62,12 @@ public interface IDirectory {
      * @return {@code true} if directory creation was successful. {@code false} otherwise.
      */
     boolean mkdir();
+
+    /**
+     * Attempts to remove the directory from the file system.
+     * @param recurse Sets a value determining whether to recurse through the directory to delete it. (Directories with content cannot be deleted without it)
+     * @return {@code true} if deletion was successful. {@code false} otherwise.
+     */
+    boolean remove(boolean recurse);
 
 }

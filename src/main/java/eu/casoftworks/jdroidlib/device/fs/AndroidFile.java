@@ -1,10 +1,17 @@
 package eu.casoftworks.jdroidlib.device.fs;
 
+import eu.casoftworks.jdroidlib.*;
+import eu.casoftworks.jdroidlib.commands.*;
 import eu.casoftworks.jdroidlib.device.*;
+import eu.casoftworks.jdroidlib.exception.*;
 import eu.casoftworks.jdroidlib.interfaces.*;
 import eu.casoftworks.jdroidlib.util.*;
 
 import java.io.*;
+import java.lang.reflect.*;
+import java.nio.file.*;
+import java.util.*;
+import java.util.logging.*;
 
 /**
  * Represents a file stored on an Android {@link Device}.
@@ -12,30 +19,34 @@ import java.io.*;
  */
 public class AndroidFile implements IFile {
 
-    public static final String LINUX_PATH_SEPARATOR = "/";
-    public static final String FILE_EXTENSION_PRECHAR = ".";
-
     // All these fields should be effectively final!
     private String name;
     private String extension;
     private IDirectory parentDir;
     private String fullName;
+    private Device hostDevice;
+    private String fullPath;
 
     /**
      * Object constructor.
      * @param fullPath
      */
-    public AndroidFile(String fullPath) {
+    public AndroidFile(Device hostDevice, String fullPath) {
 
         // Do some error checking
+        if (hostDevice == null)
+            throw new IllegalArgumentException("Host device must not be null!");
         if (fullPath == null || fullPath.isEmpty())
             throw new IllegalArgumentException("fullName must not be null!");
+
+        this.hostDevice = hostDevice;
+        this.fullPath = fullPath;
 
         String[] iGotDaSplits = fullPath.split(LINUX_PATH_SEPARATOR);
 
         fullName = iGotDaSplits[iGotDaSplits.length];
 
-        if (name.contains(FILE_EXTENSION_PRECHAR)) {
+        if (name.contains(FILE_EXTENSION_PRECHAR) && !name.startsWith(FILE_EXTENSION_PRECHAR)) {
             String[] tmp = name.split(FILE_EXTENSION_PRECHAR);
             name = tmp[0]; // First instance in array is name of the file
             extension = tmp[tmp.length]; // Account for there being periods in the filename; Only show last extension.
@@ -103,8 +114,8 @@ public class AndroidFile implements IFile {
      * @return The storage location of the pulled file.
      */
     @Override
-    public File pullFile() {
-        return pullFile(IResourceManager.combinePaths(IResourceManager.getJDroidLibTmpDirectory(), getFullName()));
+    public File pull() throws FileCouldNotBePulledException {
+        return pull(IResourceManager.combinePaths(IResourceManager.getJDroidLibTmpDirectory(), getFullName()));
     }
 
     /**
@@ -115,31 +126,105 @@ public class AndroidFile implements IFile {
      * @return The new location of the pulled file. (location/file if file is not specified in location)
      */
     @Override
-    public File pullFile(File location) {
-        return null;
+    public File pull(File location) throws FileCouldNotBePulledException {
+        return pull(location.getAbsolutePath());
     }
 
     /**
-     * The same as {@link IFile#pullFile(File)}.
+     * The same as {@link IFile#pull(File)}.
      *
      * @param location The location to pull the file to.
      *
      * @return The new location of the pulled file on the host.
      */
     @Override
-    public File pullFile(String location) {
-        return null;
+    public File pull(String location) throws FileCouldNotBePulledException {
+        File newFile = null;
+        String cmdOutput;
+
+        try {
+            cmdOutput = AndroidController
+                    .getControllerOrNull()
+                    .executeCommandReturnOutput(
+                            new AdbCommand
+                            .Factory()
+                            .setCommandTag(PULL_CMD)
+                            .setCommandArgs(
+                                    getFullPath(),
+                                    location
+                            )
+                            .setDevice(getHostDevice())
+                            .create()
+                    );
+        } catch (IOException | IllegalDeviceStateException | InterruptedException e) {
+            e.printStackTrace();
+            throw new FileCouldNotBePulledException(
+                    String.format(
+                            "The file %s could not be pulled from the device (%s)!\n" +
+                                "Source dest: %s" +
+                                "An exception occurred within JDroidLib; the stack trace has been printed to stderr!\n" +
+                                "Error message: %s\n" +
+                                "Further details: %s",
+                            getFullPath(), getHostDevice().getID(), location, e.getMessage(), e.toString()
+                    )
+            );
+        }
+
+        if (cmdOutput.isEmpty() || cmdOutput.contains(OUTPUT_ERR)) {
+            throw new FileCouldNotBePulledException(
+                 String.format(
+                         "The file %s could not be pulled from the device (%s)!\n" +
+                             "ADB output: %s",
+                         getFullPath(), getHostDevice().getID(), cmdOutput
+                 )
+            );
+        }
+
+        Logger.getLogger(AndroidFile.class.getName()).log(Level.FINE, cmdOutput);
+        newFile = new File(location);
+
+        return newFile;
     }
 
     /**
      * Attempts to get the file's contents.
      * The file may be pulled to the host in order to retrieve the bytes!
      *
+     * NOT RECOMMENDED FOR FILES > 30MiB!
+     *
      * @return The file's raw contents.
      */
     @Override
-    public byte[] getContents() {
-        return new byte[0];
+    public byte[] getContents() throws DeviceException {
+            try {
+                if (isText()) {
+                    return AndroidController.getControllerOrNull()
+                            .executeCommandReturnOutput(
+                                    new AdbCommand.Factory()
+                                            .setDevice(getHostDevice())
+                                            .setCommandTag(CAT_CMD)
+                                            .setCommandArgs(getFullPath())
+                                            .create()
+                            ).getBytes();
+                } else {
+                    File pulledFile = pull();
+                    byte[] bytes = Files.readAllBytes(pulledFile.toPath());
+                    return bytes;
+                }
+            } catch (IOException | InterruptedException ex) {
+                Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Error occurred getting file contents from device!", ex);
+                ex.printStackTrace();
+                throw new DeviceException(
+                    String.format(
+                            "Failed to fetch contents from file %s on device [[%s]]!\n" +
+                                "An exception occurred within the library!\n" +
+                                "Error message: %s\n" +
+                                "Further details:\n" +
+                                "%s",
+                            getFullPath(), getHostDevice().getID(), ex.getMessage(), ex.toString()
+                    )
+                );
+            }
     }
 
     /**
@@ -148,8 +233,8 @@ public class AndroidFile implements IFile {
      * @return The file's contents.
      */
     @Override
-    public String getContentsAsString() {
-        return null;
+    public String getContentsAsString() throws DeviceException {
+        return new String(getContents()); // Whatever dude.
     }
 
     /**
@@ -158,8 +243,44 @@ public class AndroidFile implements IFile {
      * @return {@code true} if file creation was successful. {@code false} otherwise.
      */
     @Override
-    public boolean touch() {
-        return false;
+    public boolean touch() throws CannotTouchException {
+        String output;
+        try {
+            output = AndroidController.getControllerOrNull().executeCommandReturnOutput(
+                    new AdbCommand.Factory()
+                        .setDevice(getHostDevice())
+                        .setCommandTag(TOUCH_CMD)
+                        .setCommandArgs(getFullPath())
+                        .create()
+            );
+            return output.isEmpty();
+        } catch (IOException | IllegalDeviceStateException | InterruptedException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Could not touch file on device!", ex);
+            ex.printStackTrace();
+            throw new CannotTouchException(ex);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * @return
+     * @throws DeviceException
+     */
+    @Override
+    public boolean isText() throws DeviceException {
+        try {
+            return AndroidController.getControllerOrNull().executeCommandReturnOutput(
+                new AdbCommand.Factory()
+                    .setDevice(getHostDevice())
+                    .setCommandTag(FILE_CMD)
+                    .setCommandArgs(getFullPath())
+                    .create()
+            ).contains("text");
+        } catch (Exception ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Error occurred determining file contents!", ex);
+            ex.printStackTrace();
+            throw new DeviceException(ex);
+        }
     }
 
     /**
@@ -169,7 +290,7 @@ public class AndroidFile implements IFile {
      */
     @Override
     public Device getHostDevice() {
-        return null;
+        return hostDevice;
     }
 
     /**
@@ -178,8 +299,24 @@ public class AndroidFile implements IFile {
      * @return The file system entry's permissions.
      */
     @Override
-    public PermissionSet getPermissions() {
-        return null;
+    public PermissionSet getPermissions() throws DeviceException {
+        String[] statArgs = new String[STAT_PERMS_ARGS.length + 1];
+        statArgs[statArgs.length - 1] = getFullPath();
+        try {
+            return PermissionSet.fromStatOutput(
+                AndroidController.getControllerOrNull().executeCommandReturnOutput(
+                    new AdbShellCommand.Factory()
+                        .setDevice(getHostDevice())
+                        .setCommandTag(STAT_CMD)
+                        .setCommandArgs(statArgs)
+                        .create()
+                )
+            );
+        } catch (IOException | InterruptedException | IllegalDeviceStateException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, "An error occurred getting file permissions from device!", ex);
+            ex.printStackTrace();
+            throw new DeviceException(ex);
+        }
     }
 
     /**
@@ -189,7 +326,7 @@ public class AndroidFile implements IFile {
      */
     @Override
     public String getFullPath() {
-        return null;
+        return fullPath;
     }
 
     /**
@@ -199,7 +336,7 @@ public class AndroidFile implements IFile {
      */
     @Override
     public boolean isHidden() {
-        return false;
+        return name.startsWith(FILE_EXTENSION_PRECHAR);
     }
 
     /**
@@ -208,8 +345,23 @@ public class AndroidFile implements IFile {
      * @return {@code true} if the file/directory exists. {@code false} otherwise.
      */
     @Override
-    public boolean exists() {
-        return false;
+    public boolean exists() throws DeviceException {
+        String cmdOutput;
+        try {
+            cmdOutput = AndroidController.getControllerOrNull().executeCommandReturnOutput(
+                new AdbShellCommand.Factory()
+                    .setCommandTag(FILE_EXISTS_CMD.replace(CMD_ARG_FILE, getFullPath()))
+                    .setDevice(getHostDevice())
+                    .create()
+            );
+            if (cmdOutput.trim().equalsIgnoreCase(OUTPUT_FILE_EXISTS))
+                return true;
+            else return false;
+        } catch (IOException | IllegalDeviceStateException | InterruptedException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Failed to determine whether file exists on device!", ex);
+            ex.printStackTrace();
+            throw new DeviceException(ex);
+        }
     }
 
     /**
