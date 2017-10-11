@@ -4,6 +4,7 @@ import eu.casoftworks.jdroidlib.device.Device;
 import eu.casoftworks.jdroidlib.exception.*;
 
 import java.io.*;
+import java.util.*;
 
 /**
  * Defines a file stored on a {@link Device}'s file system.
@@ -87,5 +88,17 @@ public interface IFile extends IFileSystemEntry {
      * @return {@code true} if the file contains text. {@code false} otherwise.
      */
     boolean isText() throws DeviceException;
+
+    /**
+     * Gets the file's MTIME ((last) modification time).
+     * @return A date noting the last time the file was modified.
+     */
+    Date getModTime();
+
+    /**
+     * Attempts to remove a file from the {@link Device}'s {@link FileSystem}
+     * @return {@code true} if file was removed. {@code false} otherwise.
+     */
+    boolean remove(boolean force) throws CannotRemoveException;
 
 }

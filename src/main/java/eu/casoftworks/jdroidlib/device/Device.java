@@ -99,6 +99,7 @@ public class Device implements IDevice {
     private DeviceState state;
 
     private SuperUser su; // Effectively final
+    private FileSystem fileSystem; // Effectively final
     
     /**
      * Constructor for devices connected via USB and/or emulated devices.
@@ -183,6 +184,7 @@ public class Device implements IDevice {
     public String getModelString() { return  modelString; }
     //</editor-fold>
 
+    //<editor-fold desc="Purely device-related stuff (device info)" defaultstate="collapsed" >
     /**
      * {@inheritDoc}
      */
@@ -253,6 +255,7 @@ public class Device implements IDevice {
      * @return
      */
     public double getSdkVersion() { return sdkVersion; }
+    //</editor-fold>
 
     /**
      * Gets the {@link SuperUser} object associated with this {@link Device}.
@@ -272,4 +275,11 @@ public class Device implements IDevice {
      */
     public boolean hasRoot() { return getSuperUser().isInstalled(); }
 
+    /**
+     * Gets an instance of {@link FileSystem} representing the file system on this device.
+     * @return An instance of {@link FileSystem}.
+     *
+     * @see FileSystem
+     */
+    public FileSystem getFileSystem() { return fileSystem; }
 }

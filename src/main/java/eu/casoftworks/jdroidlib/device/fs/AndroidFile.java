@@ -8,8 +8,9 @@ import eu.casoftworks.jdroidlib.interfaces.*;
 import eu.casoftworks.jdroidlib.util.*;
 
 import java.io.*;
-import java.lang.reflect.*;
 import java.nio.file.*;
+import java.text.*;
+import java.time.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -26,6 +27,11 @@ public class AndroidFile implements IFile {
     private String fullName;
     private Device hostDevice;
     private String fullPath;
+    private String owner;
+    private String group;
+    private long size;
+    private int noOfSymlinks;
+    private Date mTime;
 
     /**
      * Object constructor.
@@ -49,13 +55,43 @@ public class AndroidFile implements IFile {
         if (name.contains(FILE_EXTENSION_PRECHAR) && !name.startsWith(FILE_EXTENSION_PRECHAR)) {
             String[] tmp = name.split(FILE_EXTENSION_PRECHAR);
             name = tmp[0]; // First instance in array is name of the file
-            extension = tmp[tmp.length]; // Account for there being periods in the filename; Only show last extension.
+            extension = tmp[tmp.length - 1]; // Account for there being periods in the filename; Only show last extension.
         } else {
             name = fullName; // No extensions found; name is effectively full name.
             extension = null;
         }
 
-        // TODO: Add parent directory
+        parentDir = new AndroidDirectory(hostDevice, fullPath.replace(LINUX_PATH_SEPARATOR + getFullName(), ""));
+
+        init();
+    }
+
+    private void init() {
+        String[] splitOutput; // Split output on whitespace(+n)
+        try {
+            // Example output (from nixCraft):
+            // -rw-r--r-- 1 vivek admin 2558 Jan  8 07:41 filename
+            splitOutput = AndroidController.getControllerOrNull().executeCommandReturnOutput(
+                new AdbShellCommand.Factory()
+                    .setDevice(getHostDevice())
+                    .setCommandTag(LS_CMD)
+                    .setCommandArgs("-l", getFullPath())
+                    .create()
+            ).split("\\s+");
+
+            noOfSymlinks = Integer.parseInt(splitOutput[1]); // 1 in example
+            owner = splitOutput[2]; // vivek in example
+            group = splitOutput[3]; // admin in example
+            size = Long.parseLong(splitOutput[4]); // 2558 in example
+            mTime = DateFormat.getDateInstance().parse(String.join(" ", splitOutput[5], splitOutput[6], splitOutput[7]));
+
+        } catch (IOException | IllegalDeviceStateException | InterruptedException e) {
+            e.printStackTrace();
+            owner = group = NOT_AVAILABLE;
+            size = -1;
+        } catch (ParseException ex) {
+            mTime = Date.from(Instant.MIN);
+        }
     }
 
     /**
@@ -247,7 +283,7 @@ public class AndroidFile implements IFile {
         String output;
         try {
             output = AndroidController.getControllerOrNull().executeCommandReturnOutput(
-                    new AdbCommand.Factory()
+                    new AdbShellCommand.Factory()
                         .setDevice(getHostDevice())
                         .setCommandTag(TOUCH_CMD)
                         .setCommandArgs(getFullPath())
@@ -280,6 +316,35 @@ public class AndroidFile implements IFile {
             Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Error occurred determining file contents!", ex);
             ex.printStackTrace();
             throw new DeviceException(ex);
+        }
+    }
+
+    /**
+     * Gets the file's MTIME ((last) modification time).
+     * @return A date noting the last time the file was modified.
+     */
+    @Override
+    public Date getModTime() { return mTime; }
+
+    /**
+     * Attempts to remove a file from the {@link Device}'s {@link java.io.FileSystem}
+     * @return {@code true} if file was removed. {@code false} otherwise.
+     */
+    @Override
+    public boolean remove(boolean force) throws CannotRemoveException {
+        try {
+            AndroidController.getControllerOrNull().executeCommandNoOutput(
+                    new AdbShellCommand.Factory()
+                            .setDevice(getHostDevice())
+                            .setCommandTag(RM_CMD)
+                            .setCommandArgs(force ? REMOVE_FORCE : "", getFullPath())
+                            .create()
+            );
+            return !exists();
+        } catch (IOException | InterruptedException | DeviceException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Could not remove file from device!", ex);
+            ex.printStackTrace();
+            throw new CannotRemoveException(ex);
         }
     }
 
@@ -371,7 +436,7 @@ public class AndroidFile implements IFile {
      */
     @Override
     public String getOwner() {
-        return null;
+        return owner;
     }
 
     /**
@@ -381,7 +446,7 @@ public class AndroidFile implements IFile {
      */
     @Override
     public String getGroup() {
-        return null;
+        return group;
     }
 
     /**
@@ -391,6 +456,7 @@ public class AndroidFile implements IFile {
      */
     @Override
     public long getSize() {
-        return 0;
+        return size;
     }
+
 }

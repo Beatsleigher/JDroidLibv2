@@ -1,6 +1,7 @@
 package eu.casoftworks.jdroidlib.interfaces;
 
 import eu.casoftworks.jdroidlib.device.*;
+import eu.casoftworks.jdroidlib.exception.*;
 
 import java.io.*;
 import java.util.*;
@@ -23,21 +24,21 @@ public interface IDirectory extends IFileSystemEntry {
      * Attempts to pull the directory (and its contents) from the given {@link Device} to a library-specific location on the host.
      * @return The storage location of the pulled directory.
      */
-    File pull();
+    File pull() throws FileCouldNotBePulledException;
 
     /**
      * Attempts to pull the directory (and its contents) from the {@link Device} to a given location on the host.
      * @param location The location to pull the directory to.
      * @return The new location of the pulled directory. (location/directory if directory is not specified in location)
      */
-    File pull(File location);
+    File pull(File location) throws FileCouldNotBePulledException;
 
     /**
      * The same as {@link IDirectory#pullDirectory(File)}.
      * @param location The location to pull the directory to.
      * @return The new location of the pulled directory on the host.
      */
-    File pull(String location);
+    File pull(String location) throws FileCouldNotBePulledException;
 
     /**
      * Attempts to get all the contents (files and directories) of the directory.
@@ -55,19 +56,19 @@ public interface IDirectory extends IFileSystemEntry {
      * Attempts to list all the directories within a directory.
      * @return A list of all directories in a directory.
      */
-    List<IDirectory> getDirctories();
+    List<IDirectory> getDirectories();
 
     /**
      * Attempts to create a directory on the device's file system.
      * @return {@code true} if directory creation was successful. {@code false} otherwise.
      */
-    boolean mkdir();
+    boolean mkdir() throws CannotTouchException;
 
     /**
      * Attempts to remove the directory from the file system.
      * @param recurse Sets a value determining whether to recurse through the directory to delete it. (Directories with content cannot be deleted without it)
      * @return {@code true} if deletion was successful. {@code false} otherwise.
      */
-    boolean remove(boolean recurse);
+    boolean remove(boolean recurse) throws CannotRemoveException;
 
 }

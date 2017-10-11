@@ -1,12 +1,10 @@
 package eu.casoftworks.jdroidlib.interfaces;
 
 import eu.casoftworks.jdroidlib.device.*;
-import eu.casoftworks.jdroidlib.enums.*;
 import eu.casoftworks.jdroidlib.exception.*;
 import eu.casoftworks.jdroidlib.util.*;
 
 import java.io.*;
-import java.util.*;
 
 /**
  * Defines a filesystem entry on a given device.
@@ -22,18 +20,25 @@ public interface IFileSystemEntry {
     String STAT_CMD = "stat";
     String FILE_EXISTS_CMD = "if [ -f {file} ]; then echo \"TOUCHED\"; else echo \"UNTOUCHED\"; fi";
     String DIR_EXISTS_CMD = "if [ -d {dir} ]; then echo \"TOUCHED\"; else echo \"UNTOUCHED\"; fi";
+    String LS_CMD = "ls";
 
     String[] STAT_PERMS_ARGS = new String[] { "%a", "%N" };
 
     String OUTPUT_ERR = "error";
     String OUTPUT_FILE_EXISTS = "TOUCHED";
     String OUTPUT_FILE_NOT_EXISTS = "UNTOUCHED";
+    String CURRENT_DIR = ".";
+    String PARENT_DIR = "..";
 
     String CMD_ARG_FILE = "{file}";
     String CMD_ARG_DIR = "{dir}";
+    String REMOVE_FORCE = "-f";
+    String REMOVE_RECURSE = "-R";
 
     String LINUX_PATH_SEPARATOR = "/";
     String FILE_EXTENSION_PRECHAR = ".";
+
+    String NOT_AVAILABLE = "n/a";
 
     /**
      * Gets the {@link Device} the file is hosted on.
