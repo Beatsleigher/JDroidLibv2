@@ -135,7 +135,7 @@ class Commander implements IExecutioner {
 
             return new ProcessBuilder()
                     .command(args)
-                    .directory(new File(((ResourceManager)resMan).getJDroidLibTmpDirectory()))
+                    .directory(new File(IResourceManager.getJDroidLibTmpDirectory()))
                     .inheritIO()
                     .redirectErrorStream(true)
                     .start();

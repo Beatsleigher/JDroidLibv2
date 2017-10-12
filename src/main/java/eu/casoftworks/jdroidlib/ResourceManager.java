@@ -23,47 +23,12 @@ import java.util.zip.*;
  */
 class ResourceManager implements IResourceManager {
     
-    //<editor-fold desc="Constants" defaultstate="collapsed">
-    public static final String LATEST_PTOOLS_WIN;
-    
-    public static final String LATEST_PTOOLS_MAC;
-    
-    public static final String LATEST_PTOOLS_LNX;
-    
-    public static final String JDROIDLIB_HOME = ".jdroidlib";
-    
-    public static final String JDROIDLIB_TMP = "jdl_tmp";
-    
-    public static final String JDROIDLIB_LIB = "jdl_lib";
-    
-    public static final String PSEPCHAR = File.separator;
-    
-    public static final String PTOOLS_FNAME = "platform-tools.zip";
-    
-    public static final String PTOOLS_INSTALL_DIR = "platform-tools";
-    
-    public static final String ADB_BIN_EXE = "adb.exe";
-    
-    public static final String ADB_BIN = "adb";
-    
-    public static final String FASTBOOT_BIN_EXE = "fastboot.exe";
-    
-    public static final String FASTBOOT_BIN = "fastboot";
-    //</editor-fold>
-    
-    /**
-     * Static "constructor"
-     */
-    static {
-        LATEST_PTOOLS_LNX = "https://dl.google.com/android/repository/platform-tools-latest-linux.zip";
-        LATEST_PTOOLS_MAC = "https://dl.google.com/android/repository/platform-tools-latest-darwin.zip";
-        LATEST_PTOOLS_WIN = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
-    }
+
 
     //<editor-fold desc="Overridden Members" defaultstate="collapsed">
     @Override
     public Future<File> downloadPlatformTools() throws PlatformNotSupportedException {
-       return downloadPlatformTools(defaultPlatformToolsDownloadPath()); 
+       return downloadPlatformTools(IResourceManager.defaultPlatformToolsDownloadPath());
     }
 
     @Override
@@ -136,12 +101,12 @@ class ResourceManager implements IResourceManager {
     @Override
     public void installFiles() throws InterruptedException, ExecutionException, PlatformNotSupportedException, ZipException, IOException {
         File dlLocation = null;
-        if (!(dlLocation = new File(defaultPlatformToolsDownloadPath())).exists()) {
+        if (!(dlLocation = new File(IResourceManager.defaultPlatformToolsDownloadPath())).exists()) {
             dlLocation = downloadPlatformTools().get();
         }
 
         ZipInputStream zipIStream = new ZipInputStream(new BufferedInputStream(new FileInputStream(dlLocation)));
-        File outputDir = new File(String.join(PSEPCHAR, getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR));
+        File outputDir = new File(String.join(PSEPCHAR, IResourceManager.getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR));
 
         // Check if output exists
         if (!outputDir.exists()) {
@@ -180,13 +145,20 @@ class ResourceManager implements IResourceManager {
 
     @Override
     public void addToSystemPath(File installLocation) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (installLocation == null) {
+            installLocation = defaultPlatformToolsInstallPath();
+        }
+
+        if (OsCheck.getOperatingSystemType() == OsCheck.OSType.Windows) {
+
+        }
+
     }
 
     @Override
     public File getAdb() throws FileNotFoundException {
         OsCheck.OSType osType = OsCheck.getOperatingSystemType();
-        File adb = new File(String.join(PSEPCHAR, getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR, osType == OsCheck.OSType.Windows ? ADB_BIN_EXE : ADB_BIN));
+        File adb = new File(String.join(PSEPCHAR, IResourceManager.getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR, osType == OsCheck.OSType.Windows ? ADB_BIN_EXE : ADB_BIN));
         if (adb.exists())
             return adb;
         else throw new FileNotFoundException("ADB was not found on this system! Install ADB to continue!");
@@ -195,7 +167,7 @@ class ResourceManager implements IResourceManager {
     @Override
     public File getFastboot() throws FileNotFoundException {
         OsCheck.OSType osType = OsCheck.getOperatingSystemType();
-        File adb = new File(String.join(PSEPCHAR, getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR, osType == OsCheck.OSType.Windows ? FASTBOOT_BIN_EXE : FASTBOOT_BIN));
+        File adb = new File(String.join(PSEPCHAR, IResourceManager.getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR, osType == OsCheck.OSType.Windows ? FASTBOOT_BIN_EXE : FASTBOOT_BIN));
         if (adb.exists())
             return adb;
         else throw new FileNotFoundException("Fastboot was not found on this system! Install fastboot to continue!");
@@ -243,19 +215,13 @@ class ResourceManager implements IResourceManager {
 
     }
 
-    String getJDroidLibHomeDirectory() {
-        return String.join(PSEPCHAR, System.getProperty("user.home"), JDROIDLIB_HOME);
+    /**
+     * Gets the default installation path for ADB on the host system.
+     * @return A {@link File} pointing to JDroidLib's default platform-tools install directory.
+     */
+    public File defaultPlatformToolsInstallPath() {
+        return new File(String.join(PSEPCHAR, IResourceManager.getJDroidLibLibDirectory(), PTOOLS_INSTALL_DIR, ""));
     }
-
-    String getJDroidLibTmpDirectory() {
-        return String.join(PSEPCHAR, getJDroidLibHomeDirectory(), JDROIDLIB_TMP);
-    }
-
-    String getJDroidLibLibDirectory() {
-        return String.join(PSEPCHAR, getJDroidLibHomeDirectory(), JDROIDLIB_LIB);
-    }
-
-    String defaultPlatformToolsDownloadPath() { return String.join(PSEPCHAR, getJDroidLibTmpDirectory(), PTOOLS_FNAME); }
 
     private void init() throws PlatformNotSupportedException, InterruptedException, ExecutionException, IOException {
 

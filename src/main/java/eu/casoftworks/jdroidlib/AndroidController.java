@@ -58,6 +58,13 @@ public class AndroidController implements IExecutioner {
         return controller != null ? controller : (controller = new AndroidController());
     }
 
+    /**
+     * Attempts to get an instance of this class.
+     * If no previous instances were found, will return null.
+     * @return Instance of {@link AndroidController} or {@code null}.
+     */
+    public static AndroidController getControllerOrNull() { return controller == null ? null : controller; }
+
     private AndroidController() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException {
         resourceManager = ResourceManager.getInstance();
         commander = new Commander(resourceManager);

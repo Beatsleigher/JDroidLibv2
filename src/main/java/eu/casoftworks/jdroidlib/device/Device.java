@@ -29,6 +29,7 @@ import eu.casoftworks.jdroidlib.*;
 import eu.casoftworks.jdroidlib.commands.*;
 import eu.casoftworks.jdroidlib.enums.*;
 import eu.casoftworks.jdroidlib.exception.*;
+import eu.casoftworks.jdroidlib.interfaces.*;
 import eu.casoftworks.jdroidlib.util.Ip4Address;
 
 import java.io.*;
@@ -39,7 +40,7 @@ import java.util.concurrent.*;
  * Represents a physical device.
  * @author Simon Cahill
  */
-public class Device {
+public class Device implements IDevice {
 
     //<editor-fold desc="Static Members" defaultstate="collapsed" >
 
@@ -96,6 +97,9 @@ public class Device {
     private final String productString;
     private final String modelString;
     private DeviceState state;
+
+    private SuperUser su; // Effectively final
+    private FileSystem fileSystem; // Effectively final
     
     /**
      * Constructor for devices connected via USB and/or emulated devices.
@@ -180,6 +184,17 @@ public class Device {
     public String getModelString() { return  modelString; }
     //</editor-fold>
 
+    //<editor-fold desc="Purely device-related stuff (device info)" defaultstate="collapsed" >
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getID() {
+        if (connectedViaTcpIp) {
+            return ipAddr.toString();
+        } else return serialNo;
+    }
+
     /**
      * Sets the device's Android version.
      * @return The version of Android installed on the device.
@@ -226,5 +241,45 @@ public class Device {
      * @param newState The device's new state (e.g. ONLINE or RECOVERY)
      */
     void setDeviceState(DeviceState newState) { this.state = newState; }
-    
+
+    /**
+     * Gets the version of Android installed on the device
+     * represented by this object.
+     * @return An {@link AndroidVersion} value.
+     */
+    public AndroidVersion getAndroidVersion() { return version; }
+
+    /**
+     * Gets the SDK version installed on the device represented by
+     * this object.
+     * @return
+     */
+    public double getSdkVersion() { return sdkVersion; }
+    //</editor-fold>
+
+    /**
+     * Gets the {@link SuperUser} object associated with this {@link Device}.
+     * @return An instance of {@link SuperUser}.
+     *
+     * @see SuperUser
+     */
+    public SuperUser getSuperUser() { return su; }
+
+    /**
+     * Shortcut for determining whether a device is rooted or not.
+     * Calls {@link SuperUser#isInstalled()}
+     * @return {@code true} if the {@link Device} is rooted, {@code false} otherwise.
+     *
+     * @see SuperUser
+     * @see SuperUser#isInstalled()
+     */
+    public boolean hasRoot() { return getSuperUser().isInstalled(); }
+
+    /**
+     * Gets an instance of {@link FileSystem} representing the file system on this device.
+     * @return An instance of {@link FileSystem}.
+     *
+     * @see FileSystem
+     */
+    public FileSystem getFileSystem() { return fileSystem; }
 }
