@@ -44,19 +44,19 @@ public interface IDirectory extends IFileSystemEntry {
      * Attempts to get all the contents (files and directories) of the directory.
      * @return The file's raw contents.
      */
-    List<IFileSystemEntry> getContents();
+    List<IFileSystemEntry> getContents() throws DeviceException;
 
     /**
      * Attempts to list all the files in a directory.
      * @return A list of all files in a directory.
      */
-    List<IFile> getFiles();
+    List<IFile> getFiles() throws DeviceException;
 
     /**
      * Attempts to list all the directories within a directory.
      * @return A list of all directories in a directory.
      */
-    List<IDirectory> getDirectories();
+    List<IDirectory> getDirectories() throws DeviceException;
 
     /**
      * Attempts to create a directory on the device's file system.

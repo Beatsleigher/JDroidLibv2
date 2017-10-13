@@ -29,6 +29,7 @@ public interface IFileSystemEntry {
     String OUTPUT_FILE_NOT_EXISTS = "UNTOUCHED";
     String CURRENT_DIR = ".";
     String PARENT_DIR = "..";
+    String PERMISSION_DENIED = "Permission denied";
 
     String CMD_ARG_FILE = "{file}";
     String CMD_ARG_DIR = "{dir}";
@@ -39,6 +40,9 @@ public interface IFileSystemEntry {
     String FILE_EXTENSION_PRECHAR = ".";
 
     String NOT_AVAILABLE = "n/a";
+
+    String LS_OUTPUT_PATTERN = "(([dlrwx-]{10})\\s+([0-9]+)\\s+([\\S]+\\s+){2}([0-9]+)\\s+([0-9]{2,4}(-)?){3}\\s+([0-9]{2}[:]?){2}\\s+([^\\r\\n]+))";
+    String PERMISSION_PATTERN = "([rwx-]{3})";
 
     /**
      * Gets the {@link Device} the file is hosted on.
