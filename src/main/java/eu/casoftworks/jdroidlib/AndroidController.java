@@ -54,7 +54,7 @@ public class AndroidController implements IExecutioner {
      * new instance will be created and then returned.
      * @return The instance of AndroidController
      */
-    public static AndroidController getController() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException {
+    public static AndroidController getController() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException, IllegalDeviceStateException {
         return controller != null ? controller : (controller = new AndroidController());
     }
 
@@ -65,10 +65,11 @@ public class AndroidController implements IExecutioner {
      */
     public static AndroidController getControllerOrNull() { return controller == null ? null : controller; }
 
-    private AndroidController() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException {
+    private AndroidController() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException, IllegalDeviceStateException {
         resourceManager = ResourceManager.getInstance();
         commander = new Commander(resourceManager);
         deviceList = new ArrayList<>();
+        startServer();
     }
     //</editor-fold>
 
@@ -225,7 +226,7 @@ public class AndroidController implements IExecutioner {
      * @see List
      * @see Device
      */
-    public List<Device> getDeviceList() {
+    public List<Device> getDevices() {
         return deviceList;
     }
 
