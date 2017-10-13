@@ -286,8 +286,40 @@ public class AndroidDirectory implements IDirectory {
      * @return The file's raw contents.
      */
     @Override
-    public List<IFileSystemEntry> getContents() {
-        return getHostDevice().getFileSystem().listDirectoryContents();
+    public List<IFileSystemEntry> getContents() throws DeviceException {
+        AndroidController adbController = AndroidController.getControllerOrNull();
+        String cmdOutput;
+        List<IFileSystemEntry> entries = new ArrayList<>();
+
+        try {
+            cmdOutput = adbController.executeCommandReturnOutput(
+                 new AdbShellCommand.Factory()
+                    .setCommandTag(LS_CMD)
+                    .setCommandArgs("-1", "-a", "-p", getFullPath()) // 1 (One)
+                    .setDevice(getHostDevice())
+                    .create()
+            );
+
+            // Definitely not the prettiest solution
+            // But it works
+            try (BufferedReader reader = new BufferedReader(new StringReader(cmdOutput))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    // I should only get full file names at this point
+                    if (line.toLowerCase().endsWith(IFileSystemEntry.PERMISSION_DENIED.toLowerCase()))
+                        continue;
+                    if (line.endsWith(IFileSystemEntry.LINUX_PATH_SEPARATOR))
+                        entries.add(new AndroidDirectory(getHostDevice(), getFullPath().concat(line)));
+                    else
+                        entries.add(new AndroidFile(getHostDevice(), getFullPath().concat(line)));
+                }
+            }
+        } catch (IOException | IllegalDeviceStateException | InterruptedException e) {
+            e.printStackTrace();
+            throw new DeviceException(e);
+        }
+
+        return entries;
     }
 
     /**
@@ -296,7 +328,7 @@ public class AndroidDirectory implements IDirectory {
      * @return A list of all files in a directory.
      */
     @Override
-    public List<IFile> getFiles() {
+    public List<IFile> getFiles() throws DeviceException {
         // Times like these I miss C#; I want LINQ!
         List<IFile> fileList = new ArrayList<>();
 
@@ -314,7 +346,7 @@ public class AndroidDirectory implements IDirectory {
      * @return A list of all directories in a directory.
      */
     @Override
-    public List<IDirectory> getDirectories() {
+    public List<IDirectory> getDirectories() throws DeviceException {
         List<IDirectory> dirList = new ArrayList<>();
 
         getContents().forEach(x -> {
