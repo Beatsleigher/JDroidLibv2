@@ -281,6 +281,70 @@ public class AndroidDirectory implements IDirectory {
     }
 
     /**
+     * Copies a file or directory to the desired location on the device's file system.
+     *
+     * @param destination The destination to copy the file/directory.
+     */
+    @Override
+    public void copyTo(IFileSystemEntry destination) throws DeviceException {
+        if (IFileSystemEntry.isFile(destination))
+            throw new IllegalArgumentException("Cannot copy a directory to a file!");
+        if (destination.exists())
+            throw new FileAlreadyExistsException(String.format("The directory %s already exists!", destination.getFullPath()));
+
+        String cmdOutput;
+        try {
+            cmdOutput = AndroidController.getControllerOrNull().executeCommandReturnOutput(
+                new AdbShellCommand.Factory()
+                    .setDevice(getHostDevice())
+                    .setCommandTag(CP_CMD)
+                    .setCommandArgs(getFullPath(), destination.getFullPath())
+                    .create()
+            );
+        } catch (IOException | InterruptedException ex) {
+            ex.printStackTrace();
+            throw new DeviceException(ex);
+        }
+
+        if (cmdOutput.isEmpty())
+            throw new DeviceException(cmdOutput);
+
+    }
+
+    /**
+     * Moves a file or directory to the desired location on the device's file system.
+     *
+     * @param destination The location to move the file to.
+     *
+     * @throws DeviceException
+     */
+    @Override
+    public void moveTo(IFileSystemEntry destination) throws DeviceException {
+        if (IFileSystemEntry.isFile(destination))
+            throw new IllegalArgumentException("Cannot move a directory to a file!");
+        if (destination.exists())
+            throw new FileAlreadyExistsException(String.format("The directory %s already exists!", destination.getFullPath()));
+
+        String cmdOutput;
+        try {
+            cmdOutput = AndroidController.getControllerOrNull().executeCommandReturnOutput(
+                    new AdbShellCommand.Factory()
+                            .setDevice(getHostDevice())
+                            .setCommandTag(MV_CMD)
+                            .setCommandArgs(getFullPath(), destination.getFullPath())
+                            .create()
+            );
+        } catch (IOException | InterruptedException ex) {
+            ex.printStackTrace();
+            throw new DeviceException(ex);
+        }
+
+        if (cmdOutput.isEmpty())
+            throw new DeviceException(cmdOutput);
+
+    }
+
+    /**
      * Attempts to get all the contents (files and directories) of the directory.
      *
      * @return The file's raw contents.

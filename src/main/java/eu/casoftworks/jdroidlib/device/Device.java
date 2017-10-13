@@ -89,8 +89,6 @@ public class Device implements IDevice {
     }
     //</editor-fold>
 
-    private final AndroidVersion version;
-    private final double sdkVersion;
     private final String serialNo;
     private final Ip4Address ipAddr;
     private final boolean connectedViaTcpIp;
@@ -98,9 +96,15 @@ public class Device implements IDevice {
     private final String modelString;
     private DeviceState state;
 
-    private SuperUser su; // Effectively final
-    private FileSystem fileSystem; // Effectively final
-    
+    // Effectively final
+    private AndroidVersion version;
+    private double sdkVersion;
+    private SuperUser su;
+    private FileSystem fileSystem;
+    private BusyBox busyBox;
+    private Battery battery;
+    private BuildProp buildProp;
+
     /**
      * Constructor for devices connected via USB and/or emulated devices.
      * @param serialNo The device's serial number (at least the one seen by ADB)
@@ -115,8 +119,7 @@ public class Device implements IDevice {
         this.state = state;
         this.ipAddr = null;
         this.connectedViaTcpIp = false;
-        version = setAndroidVersion();
-        sdkVersion = setSdkVersion();
+        init();
     }
     
     /**
@@ -138,8 +141,17 @@ public class Device implements IDevice {
         this.modelString = modelString;
         this.state = state;
         this.serialNo = null;
+        init();
+    }
+
+    private void init() {
         version = setAndroidVersion();
         sdkVersion = setSdkVersion();
+        su = new SuperUser(this);
+        fileSystem = new FileSystem(this);
+        busyBox = new BusyBox(this);
+        battery = new Battery(this);
+        buildProp = new BuildProp(this);
     }
 
     //<editor-fold desc="Getter methods for final variables" defaultstate="collapsed" >
@@ -258,6 +270,36 @@ public class Device implements IDevice {
     //</editor-fold>
 
     /**
+     * Reboots this {@link Device} into a specified operating mode.
+     * @param mode The mode to reboot to.
+     * @throws DeviceException If an error occurs.
+     *
+     * @see RebootMode
+     */
+    public void rebootDevice(RebootMode mode) throws DeviceException {
+        try {
+            AndroidController.getControllerOrNull().executeCommandNoOutput(
+                new AdbCommand.Factory()
+                    .setDevice(this)
+                    .setCommandTag("reboot")
+                    .setCommandArgs(mode.getMode())
+                    .create()
+            );
+        } catch (IOException | IllegalDeviceStateException | InterruptedException e) {
+            e.printStackTrace();
+            throw new DeviceException(e);
+        }
+    }
+
+    /**
+     * Reboots this {@link Device} to Android.
+     * @throws DeviceException If an error occurs.
+     */
+    public void rebootDevice() throws DeviceException {
+        rebootDevice(RebootMode.Device);
+    }
+
+    /**
      * Gets the {@link SuperUser} object associated with this {@link Device}.
      * @return An instance of {@link SuperUser}.
      *
@@ -282,4 +324,19 @@ public class Device implements IDevice {
      * @see FileSystem
      */
     public FileSystem getFileSystem() { return fileSystem; }
+
+    /**
+     * Gets an object referencing the {@link Device}'s
+     * busybox installation.
+     * @return An instance of {@link BusyBox}
+     */
+    public BusyBox getBusyBox() {
+        return busyBox;
+    }
+
+    /**
+     * Gets the device's battery.
+     * @return The {@link Device}'s {@link Battery}
+     */
+    public Battery getBattery() { return battery; }
 }

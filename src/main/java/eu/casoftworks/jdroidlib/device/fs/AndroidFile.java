@@ -4,6 +4,7 @@ import eu.casoftworks.jdroidlib.*;
 import eu.casoftworks.jdroidlib.commands.*;
 import eu.casoftworks.jdroidlib.device.*;
 import eu.casoftworks.jdroidlib.exception.*;
+import eu.casoftworks.jdroidlib.exception.FileAlreadyExistsException;
 import eu.casoftworks.jdroidlib.interfaces.*;
 import eu.casoftworks.jdroidlib.util.*;
 
@@ -220,6 +221,66 @@ public class AndroidFile implements IFile {
         newFile = new File(location);
 
         return newFile;
+    }
+
+    /**
+     * Copies a file or directory to the desired location on the device's file system.
+     *
+     * @param destination The destination to copy the file/directory.
+     */
+    @Override
+    public void copyTo(IFileSystemEntry destination) throws DeviceException {
+        if (destination.exists())
+            throw new FileAlreadyExistsException(String.format("The file %s already exists!", destination.getFullPath()));
+
+        String cmdOutput;
+        try {
+            cmdOutput = AndroidController.getControllerOrNull().executeCommandReturnOutput(
+                    new AdbShellCommand.Factory()
+                            .setDevice(getHostDevice())
+                            .setCommandTag(CP_CMD)
+                            .setCommandArgs(getFullPath(), destination.getFullPath())
+                            .create()
+            );
+        } catch (IOException | InterruptedException ex) {
+            ex.printStackTrace();
+            throw new DeviceException(ex);
+        }
+
+        if (cmdOutput.isEmpty())
+            throw new DeviceException(cmdOutput);
+
+    }
+
+    /**
+     * Moves a file or directory to the desired location on the device's file system.
+     *
+     * @param destination The location to move the file to.
+     *
+     * @throws DeviceException
+     */
+    @Override
+    public void moveTo(IFileSystemEntry destination) throws DeviceException {
+        if (destination.exists())
+            throw new FileAlreadyExistsException(String.format("The file %s already exists!", destination.getFullPath()));
+
+        String cmdOutput;
+        try {
+            cmdOutput = AndroidController.getControllerOrNull().executeCommandReturnOutput(
+                    new AdbShellCommand.Factory()
+                            .setDevice(getHostDevice())
+                            .setCommandTag(MV_CMD)
+                            .setCommandArgs(getFullPath(), destination.getFullPath())
+                            .create()
+            );
+        } catch (IOException | InterruptedException ex) {
+            ex.printStackTrace();
+            throw new DeviceException(ex);
+        }
+
+        if (cmdOutput.isEmpty())
+            throw new DeviceException(cmdOutput);
+
     }
 
     /**

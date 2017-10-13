@@ -21,6 +21,8 @@ public interface IFileSystemEntry {
     String FILE_EXISTS_CMD = "if [ -f {file} ]; then echo \"TOUCHED\"; else echo \"UNTOUCHED\"; fi";
     String DIR_EXISTS_CMD = "if [ -d {dir} ]; then echo \"TOUCHED\"; else echo \"UNTOUCHED\"; fi";
     String LS_CMD = "ls";
+    String CP_CMD = "cp";
+    String MV_CMD = "mv";
 
     String[] STAT_PERMS_ARGS = new String[] { "%a", "%N" };
 
@@ -119,6 +121,19 @@ public interface IFileSystemEntry {
      * @see File
      */
     File pull(String location) throws FileCouldNotBePulledException;
+
+    /**
+     * Copies a file or directory to the desired location on the device's file system.
+     * @param destination The destination to copy the file/directory.
+     */
+    void copyTo(IFileSystemEntry destination) throws DeviceException;
+
+    /**
+     * Moves a file or directory to the desired location on the device's file system.
+     * @param destination The location to move the file to.
+     * @throws DeviceException
+     */
+    void moveTo(IFileSystemEntry destination) throws DeviceException;
 
     /**
      * Gets a value indicating whether an instance of this interface represents a file or not.
