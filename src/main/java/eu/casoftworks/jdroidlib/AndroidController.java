@@ -36,7 +36,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class AndroidController implements IExecutioner {
+public class AndroidController implements IExecutioner, Closeable {
 
     public static final String LONG_LIST_LINE_REGEX = "(([A-z0-9.:\\-_]{1,})([\\s]+)?){5}";
 
@@ -316,6 +316,17 @@ public class AndroidController implements IExecutioner {
     @Override
     public void setTimeUnit(TimeUnit timeUnit) {
         commander.setTimeUnit(timeUnit);
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            stopServer();
+        } catch (IllegalDeviceStateException | InterruptedException e) {
+            e.printStackTrace();
+            throw new IOException(e);
+        }
+        resourceManager.close();
     }
     //</editor-fold>
 

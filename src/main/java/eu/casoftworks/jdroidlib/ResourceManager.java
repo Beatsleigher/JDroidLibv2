@@ -22,8 +22,6 @@ import java.util.zip.*;
  * @author Simon Cahill
  */
 class ResourceManager implements IResourceManager {
-    
-
 
     //<editor-fold desc="Overridden Members" defaultstate="collapsed">
     @Override
@@ -119,6 +117,13 @@ class ResourceManager implements IResourceManager {
         while (entry != null){
             String fileName = entry.getName().replace(outputDir.getName(), "");
             File newFile = new File(String.join(PSEPCHAR, outputDir.getAbsolutePath(), fileName));
+
+            // Although this class implements ICloseable,
+            // set these files to be deleted on VM exit.
+            // This way, if the VM crashes and dies,
+            // these files will still be deleted.
+            // These measures ensure that the newest binaries are always used by the library!
+            newFile.deleteOnExit();
 
             if (entry.isDirectory()) {
                 newFile.mkdirs();
@@ -235,4 +240,10 @@ class ResourceManager implements IResourceManager {
 
     }
 
+    @Override
+    public void close() throws IOException {
+        File platformToolsDir = getAdb().getParentFile();
+        if (!platformToolsDir.delete())
+            throw new IOException("Could not delete ADB/Fastboot binaries! Were the servers killed?");
+    }
 }

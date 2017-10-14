@@ -19,7 +19,7 @@ import java.util.zip.ZipException;
  * 
  * @author Simon Cahill
  */
-public interface IResourceManager {
+public interface IResourceManager extends Closeable {
 
     //<editor-fold desc="Constants" defaultstate="collapsed">
     String LATEST_PTOOLS_WIN = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
