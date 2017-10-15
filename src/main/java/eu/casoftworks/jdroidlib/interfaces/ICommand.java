@@ -52,6 +52,13 @@ public interface ICommand {
      * @return The (specific) device to execute the command on.
      */
     Device getDevice();
+
+    /**
+     * Gets the custom timeout for this command.
+     * This can be useful when the library-wide timeout is not sufficient.
+     * @return The timeout for this command in ms.
+     */
+    long getTimeout();
     
     @Override
     String toString();

@@ -1,6 +1,8 @@
 package eu.casoftworks.jdroidlib.device;
 
 import eu.casoftworks.jdroidlib.*;
+import eu.casoftworks.jdroidlib.commands.*;
+import eu.casoftworks.jdroidlib.enums.*;
 import eu.casoftworks.jdroidlib.util.*;
 
 /**
@@ -19,8 +21,12 @@ public class PackageManager {
         adbController = AndroidController.getControllerOrNull();
     }
 
-    public void installPackage(ApkFile appFile) {
-
+    public void installPackage(ApkFile appFile, InstallFlag... flags) {
+        AdbCommand command = new AdbCommand.Factory()
+                .setDevice(parentDevice)
+                .setCommandTag("install")
+                .setCommandArgs(InstallFlag.getArguments(flags))
+                .create();
     }
 
 }

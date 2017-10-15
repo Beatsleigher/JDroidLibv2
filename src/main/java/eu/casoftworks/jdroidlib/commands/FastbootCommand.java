@@ -34,8 +34,8 @@ import eu.casoftworks.jdroidlib.enums.CommandType;
  */
 public class FastbootCommand extends Command {
     
-    FastbootCommand(Device device, CommandType cmdType, String cmdTag, String... cmdArguments) {
-        super(device, cmdType, cmdTag, cmdArguments);
+    FastbootCommand(Device device, CommandType cmdType, String cmdTag, long timeout, String... cmdArguments) {
+        super(device, cmdType, cmdTag, timeout, cmdArguments);
     }
     
     public class Factory {
@@ -44,6 +44,7 @@ public class FastbootCommand extends Command {
         private CommandType cmdType = CommandType.FastbootCommand;
         private String cmdTag;
         private String[] cmdArgs;
+        private long timeout;
         
         public Factory setDevice(Device device) {
             this.device = device;
@@ -60,8 +61,13 @@ public class FastbootCommand extends Command {
             return this;
         }
         
-        public FastbootCommand create() { return new FastbootCommand(device, cmdType, cmdTag, cmdArgs); }
-        
+        public FastbootCommand create() { return new FastbootCommand(device, cmdType, cmdTag, timeout, cmdArgs); }
+
+        public Factory setTimeout(long millis) {
+            this.timeout = millis;
+            return this;
+        }
+
     }
     
 }

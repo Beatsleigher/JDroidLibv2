@@ -28,7 +28,7 @@ package eu.casoftworks.jdroidlib.commands;
 import eu.casoftworks.jdroidlib.device.Device;
 import eu.casoftworks.jdroidlib.enums.CommandType;
 import eu.casoftworks.jdroidlib.exception.*;
-import eu.casoftworks.jdroidlib.interfaces.ICommand;
+import eu.casoftworks.jdroidlib.interfaces.*;
 import eu.casoftworks.jdroidlib.util.*;
 
 /**
@@ -38,16 +38,17 @@ import eu.casoftworks.jdroidlib.util.*;
  */
 public class AdbCommand extends Command {
     
-    AdbCommand(Device device, CommandType cmdType, String cmdTag, String... cmdArguments) {
-        super(device, cmdType, cmdTag, cmdArguments);
+    AdbCommand(Device device, CommandType cmdType, String cmdTag, long timeout, String... cmdArguments) {
+        super(device, cmdType, cmdTag, timeout, cmdArguments);
     }
     
-    public static class Factory {
+    public static class Factory implements ICommandFactory {
         
         CommandType cmdType = CommandType.AdbCommand;
         String cmdTag = null;
         String[] cmdArgs = null;
         Device device = null;
+        long timeout = 0l;
         
         public Factory setCommandTag(String cmdTag) {
             this.cmdTag = cmdTag;
@@ -58,13 +59,26 @@ public class AdbCommand extends Command {
             this.cmdArgs = args;
             return this;
         }
-        
+
+        /**
+         * Sets a custom timeout for this single command.
+         *
+         * @param millis The timeout during in ms.
+         *
+         * @return The updated instance of this object.
+         */
+        @Override
+        public Factory setTimeout(long millis) {
+            timeout = millis;
+            return this;
+        }
+
         public Factory setDevice(Device device) {
             this.device = device;
             return this;
         }
         
-        public AdbCommand create() { return new AdbCommand(device, cmdType, cmdTag, cmdArgs); }
+        public AdbCommand create() { return new AdbCommand(device, cmdType, cmdTag, timeout, cmdArgs); }
         
     }
 

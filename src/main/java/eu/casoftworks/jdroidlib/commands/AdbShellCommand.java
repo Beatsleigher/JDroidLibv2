@@ -27,6 +27,7 @@ package eu.casoftworks.jdroidlib.commands;
 
 import eu.casoftworks.jdroidlib.device.Device;
 import eu.casoftworks.jdroidlib.enums.CommandType;
+import eu.casoftworks.jdroidlib.interfaces.*;
 
 /**
  * Represents a Linux shell command executed via ADB.
@@ -42,11 +43,12 @@ public class AdbShellCommand extends AdbCommand {
      * @param device
      * @param cmdType
      * @param cmdTag
+     * @param timeout
      * @param runAsRoot
      * @param cmdArguments 
      */
-    AdbShellCommand(Device device, CommandType cmdType, String cmdTag, boolean runAsRoot, String... cmdArguments) {
-        super(device, cmdType, cmdTag, cmdArguments);
+    AdbShellCommand(Device device, CommandType cmdType, String cmdTag, long timeout, boolean runAsRoot, String... cmdArguments) {
+        super(device, cmdType, cmdTag, timeout, cmdArguments);
         this.runAsRoot = runAsRoot;
     }
     
@@ -57,13 +59,14 @@ public class AdbShellCommand extends AdbCommand {
      */
     public boolean runAsRoot() { return runAsRoot; }
     
-    public static class Factory {
+    public static class Factory implements ICommandFactory {
         
         private Device device;
         private CommandType cmdType = CommandType.AdbShellCommand;
         private String cmdTag;
         private boolean runAsRoot;
         private String[] cmdArgs;
+        private long timeout;
         
         public Factory setDevice(Device device) {
             this.device = device;
@@ -84,8 +87,21 @@ public class AdbShellCommand extends AdbCommand {
             this.cmdArgs = args;
             return this;
         }
-        
-        public AdbShellCommand create() { return new AdbShellCommand(device, cmdType, cmdTag, runAsRoot, cmdArgs); }
+
+        /**
+         * Sets a custom timeout for this single command.
+         *
+         * @param millis The timeout during in ms.
+         *
+         * @return The updated instance of this object.
+         */
+        @Override
+        public ICommandFactory setTimeout(long millis) {
+            this.timeout = millis;
+            return this;
+        }
+
+        public AdbShellCommand create() { return new AdbShellCommand(device, cmdType, cmdTag, timeout, runAsRoot, cmdArgs); }
         
     }
 
