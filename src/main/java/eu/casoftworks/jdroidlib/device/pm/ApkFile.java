@@ -1,4 +1,4 @@
-package eu.casoftworks.jdroidlib.util;
+package eu.casoftworks.jdroidlib.device.pm;
 
 import eu.casoftworks.jdroidlib.device.*;
 
