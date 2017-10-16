@@ -36,7 +36,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class AndroidController implements IExecutioner {
+public class AndroidController implements IExecutioner, Closeable {
 
     public static final String LONG_LIST_LINE_REGEX = "(([A-z0-9.:\\-_]{1,})([\\s]+)?){5}";
 
@@ -54,14 +54,22 @@ public class AndroidController implements IExecutioner {
      * new instance will be created and then returned.
      * @return The instance of AndroidController
      */
-    public static AndroidController getController() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException {
+    public static AndroidController getController() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException, IllegalDeviceStateException {
         return controller != null ? controller : (controller = new AndroidController());
     }
 
-    private AndroidController() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException {
+    /**
+     * Attempts to get an instance of this class.
+     * If no previous instances were found, will return null.
+     * @return Instance of {@link AndroidController} or {@code null}.
+     */
+    public static AndroidController getControllerOrNull() { return controller == null ? null : controller; }
+
+    private AndroidController() throws InterruptedException, ExecutionException, PlatformNotSupportedException, IOException, IllegalDeviceStateException {
         resourceManager = ResourceManager.getInstance();
         commander = new Commander(resourceManager);
         deviceList = new ArrayList<>();
+        startServer();
     }
     //</editor-fold>
 
@@ -218,7 +226,7 @@ public class AndroidController implements IExecutioner {
      * @see List
      * @see Device
      */
-    public List<Device> getDeviceList() {
+    public List<Device> getDevices() {
         return deviceList;
     }
 
@@ -308,6 +316,17 @@ public class AndroidController implements IExecutioner {
     @Override
     public void setTimeUnit(TimeUnit timeUnit) {
         commander.setTimeUnit(timeUnit);
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            stopServer();
+        } catch (IllegalDeviceStateException | InterruptedException e) {
+            e.printStackTrace();
+            throw new IOException(e);
+        }
+        resourceManager.close();
     }
     //</editor-fold>
 

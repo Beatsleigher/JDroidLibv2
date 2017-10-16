@@ -44,18 +44,21 @@ public class Command implements ICommand {
     private final String commandTag;
     private final String[] commandArgs;
     private final Device device;
+    private final long timeout;
     
     /**
      * The only constructor available for this class.
      * @param device The device to execute the command on. May be null!
      * @param cmdType The type of command
      * @param cmdTag The command tag (e.g. ls)
+     * @param timeout
      * @param cmdArguments The command arguments (e.g. -la)
      */
-    Command(Device device, CommandType cmdType, String cmdTag, String... cmdArguments) {
+    Command(Device device, CommandType cmdType, String cmdTag, long timeout, String... cmdArguments) {
         this.device = device;
         commandType = cmdType;
         commandTag = cmdTag;
+        this.timeout = timeout;
         commandArgs = cmdArguments;
     }
 
@@ -94,7 +97,18 @@ public class Command implements ICommand {
      */
     @Override
     public Device getDevice() { return device; }
-    
+
+    /**
+     * Gets the custom timeout for this command.
+     * This can be useful when the library-wide timeout is not sufficient.
+     *
+     * @return The timeout for this command in ms.
+     */
+    @Override
+    public final long getTimeout() {
+        return timeout;
+    }
+
     /**
      * Gets a string representation of the current object.
      * @return 

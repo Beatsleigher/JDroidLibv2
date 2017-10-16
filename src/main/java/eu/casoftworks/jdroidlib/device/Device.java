@@ -29,6 +29,7 @@ import eu.casoftworks.jdroidlib.*;
 import eu.casoftworks.jdroidlib.commands.*;
 import eu.casoftworks.jdroidlib.enums.*;
 import eu.casoftworks.jdroidlib.exception.*;
+import eu.casoftworks.jdroidlib.interfaces.*;
 import eu.casoftworks.jdroidlib.util.Ip4Address;
 
 import java.io.*;
@@ -39,7 +40,7 @@ import java.util.concurrent.*;
  * Represents a physical device.
  * @author Simon Cahill
  */
-public class Device {
+public class Device implements IDevice {
 
     //<editor-fold desc="Static Members" defaultstate="collapsed" >
 
@@ -88,15 +89,22 @@ public class Device {
     }
     //</editor-fold>
 
-    private final AndroidVersion version;
-    private final double sdkVersion;
     private final String serialNo;
     private final Ip4Address ipAddr;
     private final boolean connectedViaTcpIp;
     private final String productString;
     private final String modelString;
     private DeviceState state;
-    
+
+    // Effectively final
+    private AndroidVersion version;
+    private double sdkVersion;
+    private SuperUser su;
+    private FileSystem fileSystem;
+    private BusyBox busyBox;
+    private Battery battery;
+    private BuildProp buildProp;
+
     /**
      * Constructor for devices connected via USB and/or emulated devices.
      * @param serialNo The device's serial number (at least the one seen by ADB)
@@ -111,8 +119,7 @@ public class Device {
         this.state = state;
         this.ipAddr = null;
         this.connectedViaTcpIp = false;
-        version = setAndroidVersion();
-        sdkVersion = setSdkVersion();
+        init();
     }
     
     /**
@@ -134,8 +141,17 @@ public class Device {
         this.modelString = modelString;
         this.state = state;
         this.serialNo = null;
+        init();
+    }
+
+    private void init() {
         version = setAndroidVersion();
         sdkVersion = setSdkVersion();
+        su = new SuperUser(this);
+        fileSystem = new FileSystem(this);
+        busyBox = new BusyBox(this);
+        battery = new Battery(this);
+        buildProp = new BuildProp(this);
     }
 
     //<editor-fold desc="Getter methods for final variables" defaultstate="collapsed" >
@@ -179,6 +195,17 @@ public class Device {
      */
     public String getModelString() { return  modelString; }
     //</editor-fold>
+
+    //<editor-fold desc="Purely device-related stuff (device info)" defaultstate="collapsed" >
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getID() {
+        if (connectedViaTcpIp) {
+            return ipAddr.toString();
+        } else return serialNo;
+    }
 
     /**
      * Sets the device's Android version.
@@ -226,5 +253,90 @@ public class Device {
      * @param newState The device's new state (e.g. ONLINE or RECOVERY)
      */
     void setDeviceState(DeviceState newState) { this.state = newState; }
-    
+
+    /**
+     * Gets the version of Android installed on the device
+     * represented by this object.
+     * @return An {@link AndroidVersion} value.
+     */
+    public AndroidVersion getAndroidVersion() { return version; }
+
+    /**
+     * Gets the SDK version installed on the device represented by
+     * this object.
+     * @return
+     */
+    public double getSdkVersion() { return sdkVersion; }
+    //</editor-fold>
+
+    /**
+     * Reboots this {@link Device} into a specified operating mode.
+     * @param mode The mode to reboot to.
+     * @throws DeviceException If an error occurs.
+     *
+     * @see RebootMode
+     */
+    public void rebootDevice(RebootMode mode) throws DeviceException {
+        try {
+            AndroidController.getControllerOrNull().executeCommandNoOutput(
+                new AdbCommand.Factory()
+                    .setDevice(this)
+                    .setCommandTag("reboot")
+                    .setCommandArgs(mode.getMode())
+                    .create()
+            );
+        } catch (IOException | IllegalDeviceStateException | InterruptedException e) {
+            e.printStackTrace();
+            throw new DeviceException(e);
+        }
+    }
+
+    /**
+     * Reboots this {@link Device} to Android.
+     * @throws DeviceException If an error occurs.
+     */
+    public void rebootDevice() throws DeviceException {
+        rebootDevice(RebootMode.Device);
+    }
+
+    /**
+     * Gets the {@link SuperUser} object associated with this {@link Device}.
+     * @return An instance of {@link SuperUser}.
+     *
+     * @see SuperUser
+     */
+    public SuperUser getSuperUser() { return su; }
+
+    /**
+     * Shortcut for determining whether a device is rooted or not.
+     * Calls {@link SuperUser#isInstalled()}
+     * @return {@code true} if the {@link Device} is rooted, {@code false} otherwise.
+     *
+     * @see SuperUser
+     * @see SuperUser#isInstalled()
+     */
+    public boolean hasRoot() { return getSuperUser().isInstalled(); }
+
+    /**
+     * Gets an instance of {@link FileSystem} representing the file system on this device.
+     * @return An instance of {@link FileSystem}.
+     *
+     * @see FileSystem
+     */
+    public FileSystem getFileSystem() { return fileSystem; }
+
+    /**
+     * Gets an object referencing the {@link Device}'s
+     * busybox installation.
+     * @return An instance of {@link BusyBox}
+     */
+    public BusyBox getBusyBox() {
+        return busyBox;
+    }
+
+    /**
+     * Gets the device's battery.
+     * @return The {@link Device}'s {@link Battery}
+     */
+    public Battery getBattery() { return battery; }
 }
