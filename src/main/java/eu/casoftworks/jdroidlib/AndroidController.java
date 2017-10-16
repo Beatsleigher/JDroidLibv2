@@ -107,7 +107,7 @@ public class AndroidController implements IExecutioner, Closeable {
     /**
      * Attempts to return a device with the serial no provided by the serial param.
      * @param serial The serial no of the device.
-     * @return The {@link Device} with the serial no provided by the serial param, or {@null}
+     * @return The {@link Device} with the serial no provided by the serial param, or {@code null}
      * if an error occurred/the device wasn't found.
      *
      * @see Device
@@ -133,7 +133,7 @@ public class AndroidController implements IExecutioner, Closeable {
     /**
      * Attempts to return a device with the IP address provided by the ipAddr param.
      * @param ipAddr The IP address of the device.
-     * @return The {@link Device} with the IP address provided by the ipAddr param, or {@null}
+     * @return The {@link Device} with the IP address provided by the ipAddr param, or {@code null}
      * if an error occurred/the device wasn't found.
      *
      * @see Device
@@ -157,7 +157,7 @@ public class AndroidController implements IExecutioner, Closeable {
     }
 
     /**
-     * Attempts to connect to a {@Device} via TCP/IP
+     * Attempts to connect to a {@link Device} via TCP/IP
      * @param ipAddr The IP address to connect to.
      * @return {@code true} if the device was successfully connected, {@code false} otherwise.
      * @throws IllegalDeviceStateException
