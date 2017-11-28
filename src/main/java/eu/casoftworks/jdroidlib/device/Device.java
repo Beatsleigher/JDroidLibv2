@@ -89,6 +89,8 @@ public class Device implements IDevice {
     }
     //</editor-fold>
 
+    public static final short ADB_DEFAULT_TCP_PORT = 5555;
+
     private final String serialNo;
     private final Ip4Address ipAddr;
     private final boolean connectedViaTcpIp;
@@ -104,6 +106,7 @@ public class Device implements IDevice {
     private BusyBox busyBox;
     private Battery battery;
     private BuildProp buildProp;
+    private PackageManager packageManager;
 
     /**
      * Constructor for devices connected via USB and/or emulated devices.
@@ -152,6 +155,7 @@ public class Device implements IDevice {
         busyBox = new BusyBox(this);
         battery = new Battery(this);
         buildProp = new BuildProp(this);
+        packageManager = new PackageManager(this);
     }
 
     //<editor-fold desc="Getter methods for final variables" defaultstate="collapsed" >
@@ -292,6 +296,34 @@ public class Device implements IDevice {
     }
 
     /**
+     * Connects a USB device to the host via TCP/IP.
+     * @param port The port to connect with. The default is 5555; set to 0 to use this default port.
+     */
+    public void connectUsbDeviceViaTcpIp(short port) throws DeviceException {
+        if (port == 0) {
+            port = ADB_DEFAULT_TCP_PORT;
+        }
+
+        ICommand command = new AdbCommand.Factory()
+                .setCommandTag("tcpip")
+                .setCommandArgs(String.valueOf(port < 0 ? port & 0xFF : port)) // Compensate for Java's lack of unsigned shorts
+                .setDevice(this)
+                .create();
+        try {
+            AndroidController.getControllerOrNull().executeCommandNoOutput(command);
+        } catch (IOException | InterruptedException e) {
+            throw new DeviceException(e);
+        }
+    }
+
+    /**
+     * Connects a USB device to the host via TCP/IP using the default port.
+     * @see Device#ADB_DEFAULT_TCP_PORT
+     * @throws DeviceException
+     */
+    public void setConnectedViaTcpIp() throws DeviceException { connectUsbDeviceViaTcpIp(ADB_DEFAULT_TCP_PORT); }
+
+    /**
      * Reboots this {@link Device} to Android.
      * @throws DeviceException If an error occurs.
      */
@@ -339,4 +371,7 @@ public class Device implements IDevice {
      * @return The {@link Device}'s {@link Battery}
      */
     public Battery getBattery() { return battery; }
+
+    public PackageManager getPackageManager() { return packageManager; }
+
 }
